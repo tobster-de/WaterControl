@@ -7,18 +7,26 @@
 
 #include "Arduino.h"
 #include "MenuClass.h"
+#include "Encoder.h"
+#include "LCD.h"
 
+class Menu: public MenuClass 
+{
+private:
+	LiquidCrystal_PCF8574 *LCD;
+	RotaryEncoder* encoder;
 
-
-class Menu: public MenuClass {
+protected:
+	int updateSelection();
+	boolean checkCancel();
+	boolean checkEnter();
+	void displayMenu();
+	void displayStatus();
 
 public:
-	int updateSelection();
-	boolean selectionMade();
-	boolean checkForCancel();
-	void displayMenu();
+	Menu(LiquidCrystal_PCF8574* aLCD, RotaryEncoder* aEncoder, MenuList *menu) : MenuClass(menu), LCD(aLCD), encoder(aEncoder) {}
 };
 
-extern Menu mainMenu;
+extern Menu *mainMenu;
 
 #endif /* MENU_H_ */

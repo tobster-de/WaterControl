@@ -1,20 +1,21 @@
 #include "Encoder.h"
+
 #define NOT_AN_INTERRUPT 50
 
-RotaryEncoder *Encoder;
+uint8_t buttonPin;
+uint8_t encoderInterrupt;
+byte bMask;
 
-RotaryEncoder::RotaryEncoder(uint8_t button_pin, uint8_t encA_int_pin, uint8_t encB_pin)
-{
-	initEncoder(encA_int_pin, encB_pin);
-	initButton(button_pin);
-}
+boolean encoderIsOn = false;
+boolean buttonPressed = false;
+boolean buttonLongPressed = false;
+boolean killPress = false;
+boolean buttonIsOn = false;
 
-void Encoder_Init(uint8_t button_pin, uint8_t encA_int_pin, uint8_t encB_pin)
-{
-	Encoder = new RotaryEncoder(button_pin, encA_int_pin, encB_pin);
-}
+volatile byte *bReg;
+volatile char encoderCounter;
 
-void RotaryEncoder::initEncoder(uint8_t encA_int_pin, uint8_t encB_pin) 
+void Encoder_initEncoder(uint8_t encA_int_pin, uint8_t encB_pin) 
 {
 	pinMode(encA_int_pin, INPUT_PULLUP);
 	pinMode(encB_pin, INPUT_PULLUP);
@@ -24,35 +25,51 @@ void RotaryEncoder::initEncoder(uint8_t encA_int_pin, uint8_t encB_pin)
 	encoderInterrupt = digitalPinToInterrupt(encA_int_pin);
 }
 
-void RotaryEncoder::initButton(uint8_t button_pin) 
+void Encoder_initButton(uint8_t button_pin)
 {
 	buttonPin = button_pin;
 	pinMode(buttonPin, INPUT_PULLUP);
 }
 
-void ISR_encoder_handler() 
+void Encoder_Init(uint8_t button_pin, uint8_t encA_int_pin, uint8_t encB_pin)
 {
-	Encoder->IntHandler();
+	Encoder_initEncoder(encA_int_pin, encB_pin);
+	Encoder_initButton(button_pin);
 }
 
-void RotaryEncoder::EncoderOn() {
+void ISR_encoder_handler() {
+	//  My encoder has a full cycle of 4 transitions per click.
+	//  I only want one increment or decrement per click
+	//  So we are only looking at one transition
+	//  We're only using the falling edge on the interrupt pin.
+	//  So we know ENCODER_INTERRUPT_PIN is LOW.
+	//  If ENCODER_B_PIN is HIGH then they're different so decrement
+	//  if(digitalRead(ENCODER_B_PIN) == HIGH) {
+	if (*bReg & bMask) {
+		encoderCounter--;
+	} else {
+		encoderCounter++;
+	}
+}
+
+void Encoder_EncoderOn() {
 	attachInterrupt(encoderInterrupt, ISR_encoder_handler, FALLING);
 	encoderCounter = 0;
 	encoderIsOn = true;
 }
 
-void RotaryEncoder::EncoderOff() {
+void Encoder_EncoderOff() {
 	detachInterrupt(encoderInterrupt);
 	encoderCounter = 0;
 	encoderIsOn = false;
 }
 
-char RotaryEncoder::CheckEncoder() {
+char Encoder_CheckEncoder() {
 	if (encoderIsOn) {
-		noInterrupts();
+		cli();
 		char retval = encoderCounter;
 		encoderCounter = 0;
-		interrupts();
+		sei();
 		return retval;
 	} else {
 		return 0;
@@ -95,17 +112,17 @@ void useRotaryEncoderASCII(char& var) {
 }
 */
 
-boolean RotaryEncoder::PeekEncoder() 
+boolean Encoder_PeekEncoder()
 {
 	return encoderCounter != 0;
 }
 
-boolean RotaryEncoder::IsEncoderOn()
+boolean Encoder_IsEncoderOn()
 {
 	return encoderIsOn;
 }
 
-void RotaryEncoder::PollButton() 
+void Encoder_PollButton()
 {
 	static boolean buttonState = HIGH;
 	static boolean lastState = HIGH;
@@ -140,61 +157,39 @@ void RotaryEncoder::PollButton()
 	}
 }
 
-void RotaryEncoder::IntHandler()
-{
-	//  My encoder has a full cycle of 4 transitions per click.
-	//  I only want one increment or decrement per click
-	//  So we are only looking at one transition
-	//  We're only using the falling edge on the interrupt pin.
-	//  So we know ENCODER_INTERRUPT_PIN is LOW.
-	//  If ENCODER_B_PIN is HIGH then they're different so decrement
-	//  if(digitalRead(ENCODER_B_PIN) == HIGH) {
-	if (*bReg & bMask) {
-		encoderCounter--;
-	} else {
-		encoderCounter++;
-	}
-}
-
-/* Clears button press states. */
-void RotaryEncoder::clearButton() 
+void Encoder_clearButton()
 {
 	buttonPressed = false;
 	buttonLongPressed = false;
 }
 
-/* Returns whether the button was pressed for a long duration. */
-boolean RotaryEncoder::CheckButtonLongPress() 
+boolean Encoder_CheckButtonLongPress()
 {
 	boolean retval = buttonLongPressed;
 	buttonLongPressed = false;
 	return retval;
 }
 
-/* Returns whether the button was pressed. */
-boolean RotaryEncoder::CheckButton() 
+boolean Encoder_CheckButton()
 {
 	boolean retval = buttonPressed;
 	buttonPressed = false;
 	return retval;
 }
 
-/* Activate button press recognition. */
-void RotaryEncoder::ButtonOn() 
+void Encoder_ButtonOn()
 {
 	buttonIsOn = true;
-	clearButton();
+	Encoder_clearButton();
 }
 
-/* Deactivate button press recognition. */
-void RotaryEncoder::ButtonOff() 
+void Encoder_ButtonOff()
 {
 	buttonIsOn = false;
-	clearButton();
+	Encoder_clearButton();
 }
 
-/* Returns whether button press recognition is active. */
-boolean RotaryEncoder::IsButtonOn() 
+boolean Encoder_IsButtonOn()
 {
 	return buttonIsOn;
 }

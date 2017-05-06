@@ -1,58 +1,67 @@
-/*
- * REBLMenu.cpp
- *
- *  Created on: Oct 10, 2015
- *      Author: David
- */
 
-#include "REBLMenu.h"
+#include "Menu.h"
 
-REBLMenu reblMenu;
+Menu *mainMenu;
 
-boolean REBLMenu::checkForCancel() {
-	return checkButtonLongPress();
+boolean Menu::checkCancel()
+{
+	return encoder->CheckButtonLongPress();
 }
 
-int REBLMenu::updateSelection() {
+int Menu::updateSelection()
+{
 	int retval = 0;
 
-	if (!isEncoderOn()) {
-		encoderOn();
+	if (!encoder->IsEncoderOn()) 
+	{
+		encoder->EncoderOn();
 		return 0;
 	}
-	useRotaryEncoder(retval, 0);
-	return retval;
+
+	return (int)encoder->CheckEncoder();
 }
 
-boolean REBLMenu::selectionMade() {
-	if (!isButtonOn()) {
-		buttonOn();
+boolean Menu::checkEnter()
+{
+	if (!encoder->IsButtonOn()) 
+	{
+		encoder->ButtonOn();
 		return false;
 	}
-	if (checkButton()) { // checkButton returned true, a selection is made.
-		buttonOff();
-		encoderOff();
+	if (encoder->CheckButton()) 
+	{ 
+		// checkButton returned true, a selection is made.
+		encoder->ButtonOff();
+		encoder->EncoderOff();
 		return true;
 	}
 	return false;
 }
 
-//  Currently only implemented to use 2 lines.  Could be expanded.
-void REBLMenu::displayMenu() {
-
+void Menu::displayMenu()
+{
+	int i;
 	char outBuf[NUM_LCD_COLS + 1];
+	int currentLine = this->topItemIndex;
 
-	int currentLine = 0;
+	for (int i = 0; i < NUM_LCD_ROWS; i++)
+	{
+		currentLine = this->topItemIndex + i;
+		if (currentLine = this->currentItemIndex)
+		{
+			outBuf[0] = '-';
+			outBuf[1] = '>';
+		}
 
-	outBuf[0] = '-';
-	outBuf[1] = '>';
-	getText(outBuf + 2, currentItemIndex);
-	displayLineLeft(currentLine++, outBuf);
-	outBuf[0] = ' ';
-	outBuf[1] = ' ';
-	getText(outBuf + 2, currentItemIndex + 1);
+		getText(outBuf + 2, currentLine);
 
-	displayLineLeft(currentLine++, outBuf);
+		LCD->setCursor(0, i);
+		LCD->print(outBuf);
+	}
+}
+
+void Menu::displayStatus()
+{
 
 }
 

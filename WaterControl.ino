@@ -1,6 +1,39 @@
+#include <LiquidCrystal_PCF8574.h>
 #include "Configuration.h"
 #include "LCD.h"
 #include "Encoder.h"
+#include "Menu.h"
+
+boolean ActivatePump();
+
+MenuItem PROGMEM clockMenuItems[] =
+{
+	{ "Zurück", return_menu, NULL },
+	{ "Stunde", edit_value, },
+	{ "Minute", edit_value, }
+};
+
+MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
+ItemData clockItem = { .subMenu = clockMenu };
+
+const ItemData PROGMEM activatePump = { .function = ActivatePump };
+
+MenuItem PROGMEM pumpMenuItems[] =
+{
+	{ "Zurück", return_menu, NULL },
+	{ "Aktivieren", call_function, &activatePump},
+};
+MenuList pumpMenu(pumpMenuItems, menuListSize(pumpMenuItems));
+ItemData pumpItem = { .subMenu = pumpMenu };
+
+MenuItem PROGMEM menuItems[] =
+{
+	{ "Uhr", enter_submenu,  &clockItem },
+	{ "Pumpe", enter_submenu,  &pumpItem },
+};
+
+MenuList menuList(menuItems, menuListSize(menuItems));
+
 
 void setup()
 {
@@ -10,7 +43,8 @@ void setup()
 
 	LCD_Init(DISPLAY_I2C_ADDR, NUM_LCD_COLS, NUM_LCD_ROWS);
 	LCD->clear();
-	LCD->print("Hallo");
+
+	mainMenu = new Menu(LCD, Encoder, &menuList);
 }
 
 unsigned long light_timeout;
@@ -18,6 +52,8 @@ unsigned long millis_value;
 
 void loop()
 {
+	mainMenu->update();
+
 	millis_value = millis();
 
 	Encoder->PollButton();
@@ -35,4 +71,9 @@ void loop()
 		LCD->setBacklight(0);
 		LCD->clear();
 	}
+}
+
+boolean ActivatePump()
+{
+	return true;
 }
