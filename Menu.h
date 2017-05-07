@@ -15,6 +15,13 @@ class Menu: public MenuClass
 private:
 	LiquidCrystal_PCF8574 *LCD;
 	RotaryEncoder* encoder;
+	
+	boolean buttonFlag;
+	boolean buttonLongFlag;
+	int encoderValue;
+
+	unsigned long light_timeout;
+	unsigned long power_timeout;
 
 protected:
 	int updateSelection();
@@ -22,9 +29,17 @@ protected:
 	boolean checkEnter();
 	void displayMenu();
 	void displayStatus();
+	void changeMode(MenuMode nextMode);
 
 public:
-	Menu(LiquidCrystal_PCF8574* aLCD, RotaryEncoder* aEncoder, MenuList *menu) : MenuClass(menu), LCD(aLCD), encoder(aEncoder) {}
+	Menu(LiquidCrystal_PCF8574* aLCD, RotaryEncoder* aEncoder, MenuList *menu) : 
+		MenuClass(menu), LCD(aLCD), encoder(aEncoder), buttonFlag(false), encoderValue(0), buttonLongFlag(false) 
+	{
+		light_timeout = millis_value + LIGHT_TIMEOUT;
+		power_timeout = millis_value + DISPLAY_TIMEOUT;
+	}
+
+	void update();
 };
 
 extern Menu *mainMenu;

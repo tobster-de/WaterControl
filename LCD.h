@@ -12,7 +12,7 @@
 
 extern LiquidCrystal_PCF8574 *LCD;
 
-void LCD_Init(uint8_t address, uint8_t columns, uint8_t rows);
+void LCD_Init(uint8_t address);
 
 
 #endif

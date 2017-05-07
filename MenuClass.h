@@ -18,11 +18,11 @@ typedef boolean (*ItemFunction)();
 
 typedef enum
 {
-	mode_standby,
-	mode_status, //	status screen
-	mode_menu,   // menu browsing
-	mode_edit,   // edit value
-	mode_func    // execute external function
+	mode_standby,    // e.g. deactivated display 
+	mode_status,     //	status screen
+	mode_menu,       // menu browsing
+	mode_edit,       // edit value
+	mode_func        // execute external function
 } MenuMode;
 
 typedef enum
@@ -52,13 +52,18 @@ const typedef struct MenuItem_t
 class MenuList 
 {
 private:
+	MenuList* parent;
+
 	MenuItem *menuItems;
 	uint8_t listSize;
 public:
-	MenuList(MenuItem* aList, uint8_t aSize) :menuItems(aList), listSize(aSize) { }
+	MenuList(MenuItem* aList, uint8_t aSize) : menuItems(aList), listSize(aSize), parent(NULL) { }
 	
 	MenuItem* getItem(int aIndex);
 	uint8_t getSize();
+
+	void setParent(MenuList *parent);
+	MenuList* getParent();
 };
 
 typedef union ItemData
@@ -73,9 +78,15 @@ typedef union ItemData
 
 class MenuClass 
 {
+private:
+	unsigned long menu_timeout;
+
 protected:
+	unsigned long millis_value;
+
 	MenuMode mode;
 	int topItemIndex;
+	MenuItem *currentItem;
 	int currentItemIndex;
 	MenuList *mainMenu;
 	MenuList *currentMenu;
@@ -93,10 +104,14 @@ protected:
 	virtual void displayMenu() = 0;
 	// display status screen
 	virtual void displayStatus() = 0;
+	// menu mode changed
+	virtual void changeMode(MenuMode nextMode);
 	// navigate to another menu
 	void setCurrentMenu(MenuList*);
 	// run an external function
 	boolean runFunction();
+	// get sub menu
+	MenuList* getSubMenu();
 	// get the item text
 	void getText(char*, int);
 public:

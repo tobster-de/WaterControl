@@ -13,13 +13,15 @@
 #define ENCODER_BUTTON		6
 
 #define BUTTON_DEBOUNCE		50
-#define BUTTON_LONG_PRESS	2000
+#define BUTTON_LONG_PRESS	1500
 
 #define NUM_LCD_ROWS		4
 #define NUM_LCD_COLS		20
 
 #define DISPLAY_I2C_ADDR	0x3F
-#define DISPLAY_TIMEOUT		5000
+#define MENU_TIMEOUT		10000   // automatically close menu -> status
+#define LIGHT_TIMEOUT		20000   // turn light off
+#define DISPLAY_TIMEOUT		30000   // power off display
 
 #define BACKLIGHT_ACTIVE_LOW  // Comment line if backlight LEDs are active HIGH.
 
