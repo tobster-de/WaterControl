@@ -8,23 +8,23 @@ boolean ActivatePump();
 
 MenuItem PROGMEM clockMenuItems[] =
 {
-	{ "Zurück", return_menu, NULL },
-	{ "Stunde", edit_value, },
-	{ "Minute", edit_value, }
+	{ "..", return_menu, NULL },
+	{ "Stunde", edit_value, NULL },
+	{ "Minute", edit_value, NULL }
 };
 
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
-ItemData clockItem = { .subMenu = clockMenu };
+ItemData clockItem = { .subMenu = &clockMenu };
 
 const ItemData PROGMEM activatePump = { .function = ActivatePump };
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
-	{ "Zurück", return_menu, NULL },
+	{ "..", return_menu, NULL },
 	{ "Aktivieren", call_function, &activatePump},
 };
 MenuList pumpMenu(pumpMenuItems, menuListSize(pumpMenuItems));
-ItemData pumpItem = { .subMenu = pumpMenu };
+ItemData pumpItem = { .subMenu = &pumpMenu };
 
 MenuItem PROGMEM menuItems[] =
 {

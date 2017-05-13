@@ -25,7 +25,7 @@ typedef enum
 	mode_func        // execute external function
 } MenuMode;
 
-typedef enum
+typedef enum uint8
 {
 	no_action,
 	return_menu,
@@ -44,7 +44,7 @@ typedef union ItemData;
 
 const typedef struct MenuItem_t 
 {
-	char text[NUM_LCD_COLS];
+	char text[NUM_LCD_COLS+1];
 	ActionType action;
 	ItemData* data;
 } MenuItem;
@@ -73,7 +73,7 @@ typedef union ItemData
 	{
 		void* value;
 	} editData;
-	MenuList subMenu;
+	MenuList* subMenu;
 };
 
 class MenuClass 
@@ -110,6 +110,8 @@ protected:
 	void setCurrentMenu(MenuList*);
 	// run an external function
 	boolean runFunction();
+	// get menu item action
+	ActionType getAction();
 	// get sub menu
 	MenuList* getSubMenu();
 	// get the item text

@@ -40,24 +40,38 @@ MenuClass::MenuClass(MenuList* mainMenu)
 	changeMode(mode_status);
 }
 
-boolean MenuClass::runFunction() 
+boolean MenuClass::runFunction()
 {
 	ItemFunction theFunc;
 
 #ifdef USING_PROGMEM
-	theFunc = (ItemFunction) pgm_read_word(&(currentItem->data->function));
+	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
+	theFunc = (ItemFunction)data->function;
 #else
 	theFunc = currentItem->data->function;
 #endif
 	return theFunc();
 }
 
+ActionType MenuClass::getAction()
+{
+	ActionType result;
+
+#ifdef USING_PROGMEM
+	result = (ActionType)pgm_read_byte(&(currentItem->action));
+#else
+	result = currentItem->action;
+#endif
+	return result;
+}
+
 MenuList* MenuClass::getSubMenu()
 {
 #ifdef USING_PROGMEM
-	return pgm_read_word(&(currentItem->data->subMenu));
+	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
+	return (MenuList*)data->subMenu;
 #else
-	theFunc = currentItem->data->subMenu;
+	return currentItem->data->subMenu;
 #endif
 }
 
@@ -106,11 +120,11 @@ void MenuClass::update()
 			displayMenu();
 		}
 		else 
-		{   
+		{ 
 			// only check for selection if menu not also updating
 			if (enterFlag) 
 			{ 
-				ActionType action = currentItem->action;
+				ActionType action = getAction();
 
 				// selection made, run item function once now
 				if (action == call_function && !runFunction())
@@ -124,12 +138,14 @@ void MenuClass::update()
 				{
 					MenuList *sub = getSubMenu();
 					sub->setParent(currentMenu);
+					changeMode(mode);
 					setCurrentMenu(sub);
 				}
 
 				if (action == return_menu)
 				{
 					MenuList *parent = currentMenu->getParent();					
+					changeMode(mode);
 					setCurrentMenu(parent);
 				}
 			}
