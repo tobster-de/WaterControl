@@ -1,7 +1,8 @@
+#include <TimerOne.h>
 #include <LiquidCrystal_PCF8574.h>
 #include "Configuration.h"
 #include "LCD.h"
-#include "Encoder.h"
+#include "Encoder/ClickEncoder.h"
 #include "Menu.h"
 
 boolean ActivatePump();
@@ -16,7 +17,7 @@ MenuItem PROGMEM clockMenuItems[] =
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
 ItemData clockItem = { .subMenu = &clockMenu };
 
-const ItemData PROGMEM activatePump = { .function = ActivatePump };
+ItemData activatePump = { .function = ActivatePump };
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
@@ -34,18 +35,31 @@ MenuItem PROGMEM menuItems[] =
 
 MenuList menuList(menuItems, menuListSize(menuItems));
 
+/*****************************************************************************************/
+
+ClickEncoder *encoder;
+
+void timerIsr()
+{
+	encoder->service();
+}
 
 void setup()
 {
-	Encoder_Init((uint8_t)ENCODER_BUTTON, (uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B);
-	Encoder->EncoderOn();
-	Encoder->ButtonOn();
+	//Encoder_Init((uint8_t)ENCODER_BUTTON, (uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B);
+	//Encoder->EncoderOn();
+	//Encoder->ButtonOn();
+
+	encoder = new ClickEncoder((uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B, (uint8_t)ENCODER_BUTTON, ENCODER_STEPS);
+
+	Timer1.initialize(1000);
+	Timer1.attachInterrupt(timerIsr);
 
 	LCD_Init(DISPLAY_I2C_ADDR);
 	LCD->clear();
 	LCD->setBacklight(255);
 
-	mainMenu = new Menu(LCD, Encoder, &menuList);
+	mainMenu = new Menu(LCD, encoder, &menuList);
 }
 
 
@@ -56,5 +70,8 @@ void loop()
 
 boolean ActivatePump()
 {
+	LCD->setCursor(0, 0);
+	LCD->print("Pumpe");
+
 	return true;
 }

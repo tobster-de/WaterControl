@@ -5,42 +5,20 @@ Menu *mainMenu;
 
 boolean Menu::checkCancel()
 {
-	buttonLongFlag = encoder->CheckButtonLongPress();
+	buttonLongFlag = button == ClickEncoder::Held;
 	return buttonLongFlag;
 }
 
 int Menu::updateSelection()
 {
-	int retval = 0;
-
-	if (!encoder->IsEncoderOn()) 
-	{
-		encoder->EncoderOn();
-		return 0;
-	}
-
-	encoderValue = encoder->CheckEncoder();
+	encoderValue = encoder->getValue();
 	return encoderValue;
 }
 
 boolean Menu::checkEnter()
 {
-	if (!encoder->IsButtonOn()) 
-	{
-		encoder->ButtonOn();
-		return false;
-	}
-
-	buttonFlag = encoder->CheckButton();
-	if (buttonFlag) 
-	{ 
-		// checkButton returned true, a selection is made.
-		encoder->ButtonOff();
-		encoder->EncoderOff();
-		return true;
-	}
-	
-	return false;
+	buttonFlag = button == ClickEncoder::Clicked;
+	return buttonFlag;
 }
 
 void Menu::displayMenu()
@@ -71,6 +49,11 @@ void Menu::displayStatus()
 {
 	LCD->setCursor(0, 0);
 	LCD->print("Hallo");
+
+	//LCD->setCursor(0, 3);
+	//LCD->print("         ");
+	//LCD->setCursor(0, 3);
+	//LCD->print(encoderValue);
 }
 
 void Menu::changeMode(MenuMode nextMode)
@@ -81,7 +64,7 @@ void Menu::changeMode(MenuMode nextMode)
 
 void Menu::update()
 {
-	Encoder->PollButton();
+	button = encoder->getButton();
 
 	MenuClass::update();
 

@@ -47,7 +47,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\libraries\LiquidCrystal_PCF8574-1.1.0\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\..\arduino-1.6.12\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries;$(ProjectDir)..\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\variants\standard;$(ProjectDir)..\WaterControl;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\avr\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\libraries\LiquidCrystal_PCF8574-1.1.0\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\libraries\TimerOne;$(ProjectDir)..\..\arduino-1.6.12\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries;$(ProjectDir)..\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\variants\standard;$(ProjectDir)..\WaterControl;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\avr\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.WaterControl.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=106012;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -83,14 +83,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Encoder.cpp" />
+    <ClCompile Include="Encoder\ClickEncoder.cpp" />
     <ClCompile Include="LCD.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="MenuClass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Configuration.h" />
-    <ClInclude Include="Encoder.h" />
+    <ClInclude Include="Encoder\ClickEncoder.h" />
     <ClInclude Include="LCD.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="MenuClass.h" />

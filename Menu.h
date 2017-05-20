@@ -7,15 +7,16 @@
 
 #include "Arduino.h"
 #include "MenuClass.h"
-#include "Encoder.h"
+#include "Encoder/ClickEncoder.h"
 #include "LCD.h"
 
 class Menu: public MenuClass 
 {
 private:
 	LiquidCrystal_PCF8574 *LCD;
-	RotaryEncoder* encoder;
-	
+	ClickEncoder* encoder;
+	ClickEncoder::Button button;
+
 	boolean buttonFlag;
 	boolean buttonLongFlag;
 	int encoderValue;
@@ -32,7 +33,7 @@ protected:
 	void changeMode(MenuMode nextMode);
 
 public:
-	Menu(LiquidCrystal_PCF8574* aLCD, RotaryEncoder* aEncoder, MenuList *menu) : 
+	Menu(LiquidCrystal_PCF8574* aLCD, ClickEncoder* aEncoder, MenuList *menu) : 
 		MenuClass(menu), LCD(aLCD), encoder(aEncoder), buttonFlag(false), encoderValue(0), buttonLongFlag(false) 
 	{
 		light_timeout = millis_value + LIGHT_TIMEOUT;

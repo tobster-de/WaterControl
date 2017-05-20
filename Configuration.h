@@ -8,12 +8,10 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#define ENCODER_PIN_A		3
-#define ENCODER_PIN_B		4
-#define ENCODER_BUTTON		6
-
-#define BUTTON_DEBOUNCE		50
-#define BUTTON_LONG_PRESS	1500
+#define ENCODER_PIN_A		3       // digital pin 3
+#define ENCODER_PIN_B		4       // digital pin 4
+#define ENCODER_BUTTON		6       // digital pin 6
+#define ENCODER_STEPS       4U      // steps per notch
 
 #define NUM_LCD_ROWS		4
 #define NUM_LCD_COLS		20
