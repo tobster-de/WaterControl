@@ -30,6 +30,7 @@ protected:
 	boolean checkEnter();
 	void displayMenu();
 	void displayStatus();
+	void displayEdit(MenuItem*);
 	void changeMode(MenuMode nextMode);
 
 public:
@@ -41,6 +42,7 @@ public:
 	}
 
 	void update();
+	void updateStatus();
 };
 
 extern Menu *mainMenu;

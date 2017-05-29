@@ -40,13 +40,32 @@ MenuClass::MenuClass(MenuList* mainMenu)
 	changeMode(mode_status);
 }
 
+void MenuClass::getText(char* aBuf, int aIndex)
+{
+#ifdef USING_PROGMEM
+	strcpy_P(aBuf, (currentMenu->getItem(aIndex)->text));
+#else
+	strcpy(aBuf, (currentMenu->getItem(aIndex)->text));
+#endif
+}
+
+EditType * MenuClass::getEditData()
+{
+#ifdef USING_PROGMEM
+	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
+	return (EditType*)data->editData;
+#else
+	return currentItem->data->editData;
+#endif
+}
+
 boolean MenuClass::runFunction()
 {
 	ItemFunction theFunc;
 
 #ifdef USING_PROGMEM
 	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
-	theFunc = (ItemFunction)data->function;
+	theFunc = data->function;
 #else
 	theFunc = currentItem->data->function;
 #endif
@@ -102,6 +121,7 @@ void MenuClass::update()
 			// return to status screen after timeout
 			menu_timeout = 0;
 			changeMode(mode_status);
+			displayStatus();
 		}
 
 		if (changeValue != 0) 
@@ -144,9 +164,15 @@ void MenuClass::update()
 
 				if (action == return_menu)
 				{
-					MenuList *parent = currentMenu->getParent();					
+					MenuList *parent = currentMenu->getParent();
 					changeMode(mode);
 					setCurrentMenu(parent);
+				}
+
+				if (action == edit_value)
+				{					
+					changeMode(mode_edit);
+					displayEdit(currentItem);
 				}
 			}
 			else if (cancelFlag)
@@ -163,9 +189,37 @@ void MenuClass::update()
 			}
 		}
 	}
+	else if (mode == mode_edit)
+	{
+		if (changeValue != 0)
+		{
+			EditType* editData = getEditData();
+			*editData->value += changeValue;
+			
+			if (*editData->value > editData->maxValue)
+			{
+				*editData->value = editData->minValue+(*editData->value-editData->maxValue);
+			}
+
+			if (*editData->value < editData->minValue)
+			{
+				*editData->value = editData->maxValue - (editData->minValue - *editData->value) + 1;
+			}
+
+			displayEdit(currentItem);
+		}
+
+		if (enterFlag)
+		{
+			EditType* editData = getEditData();
+			editData->endEdit();
+			changeMode(mode_menu);
+			displayMenu();
+		}
+	}
 	else if (mode == mode_status)
 	{
-		displayStatus();
+		//displayStatus();
 
 		if (/*changeValue != 0 ||*/ enterFlag)
 		{
@@ -180,15 +234,6 @@ void MenuClass::update()
 			changeMode(mode_status);
 		}
 	}
-}
-
-void MenuClass::getText(char* aBuf, int aIndex) 
-{
-#ifdef USING_PROGMEM
-	strcpy_P(aBuf, (currentMenu->getItem(aIndex)->text));
-#else
-	strcpy(aBuf, (currentMenu->getItem(aIndex)->text));
-#endif
 }
 
 boolean MenuClass::checkCancel() 

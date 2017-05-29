@@ -6,18 +6,43 @@
 #include "Menu.h"
 
 boolean ActivatePump();
+boolean SetTime();
+
+/*****************************************************************************************/
+
+long hour, minute;
+
+EditType hourEdit =
+{
+	&hour,
+	"",
+	0, 23, 1,
+	SetTime
+};
+
+ItemData hourItem = { .editData = &hourEdit };
+
+EditType minuteEdit =
+{
+	&minute,
+	"",
+	0, 59, 1,
+	SetTime
+};
+
+ItemData minuteItem = { .editData = &minuteEdit };
 
 MenuItem PROGMEM clockMenuItems[] =
 {
 	{ "..", return_menu, NULL },
-	{ "Stunde", edit_value, NULL },
-	{ "Minute", edit_value, NULL }
+	{ "Stunde", edit_value, &hourItem },
+	{ "Minute", edit_value, &minuteItem }
 };
 
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
 ItemData clockItem = { .subMenu = &clockMenu };
 
-ItemData activatePump = { .function = ActivatePump };
+ItemData activatePump = { .function = ActivatePump }; 
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
@@ -38,10 +63,12 @@ MenuList menuList(menuItems, menuListSize(menuItems));
 /*****************************************************************************************/
 
 ClickEncoder *encoder;
+volatile bool timerFlag = false;
 
 void timerIsr()
 {
 	encoder->service();
+	timerFlag = true;
 }
 
 void setup()
@@ -66,6 +93,11 @@ void setup()
 void loop()
 {
 	mainMenu->update();
+	if (timerFlag)
+	{
+		timerFlag = false;
+		mainMenu->updateStatus();
+	}
 }
 
 boolean ActivatePump()
@@ -73,5 +105,11 @@ boolean ActivatePump()
 	LCD->setCursor(0, 0);
 	LCD->print("Pumpe");
 
+	return true;
+}
+
+
+boolean SetTime()
+{
 	return true;
 }

@@ -25,7 +25,7 @@ typedef enum
 	mode_func        // execute external function
 } MenuMode;
 
-typedef enum uint8
+typedef enum 
 {
 	no_action,
 	return_menu,
@@ -34,11 +34,16 @@ typedef enum uint8
 	call_function
 } ActionType;
 
-typedef enum 
+// generic description of editable value
+typedef struct
 {
-	integer,
-	floating
-} DataType;
+	long* value;
+	char unit[4];
+	long minValue;
+	long maxValue;
+	long divisor;           // for integer value == 1
+	ItemFunction endEdit;
+} EditType;
 
 typedef union ItemData;
 
@@ -69,10 +74,7 @@ public:
 typedef union ItemData
 {
 	ItemFunction function;
-	struct
-	{
-		void* value;
-	} editData;
+	EditType* editData;
 	MenuList* subMenu;
 };
 
@@ -104,6 +106,8 @@ protected:
 	virtual void displayMenu() = 0;
 	// display status screen
 	virtual void displayStatus() = 0;
+	// display edit mode
+	virtual void displayEdit(MenuItem*) = 0;
 	// menu mode changed
 	virtual void changeMode(MenuMode nextMode);
 	// navigate to another menu
@@ -116,6 +120,8 @@ protected:
 	MenuList* getSubMenu();
 	// get the item text
 	void getText(char*, int);
+	// get the item text
+	EditType* getEditData();
 public:
 	void update();
 };

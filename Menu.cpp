@@ -45,10 +45,48 @@ void Menu::displayMenu()
 	}
 }
 
+void Menu::displayEdit(MenuItem* menuItem)
+{
+	EditType* editData;
+	char outBuf[NUM_LCD_COLS + 1], valBuf[5];
+	long value;
+	int off;
+	size_t len;
+
+	getText(outBuf, this->currentItemIndex);
+
+	LCD->setCursor(0, 0);
+	LCD->print(outBuf);
+
+	memset(&outBuf, 32, NUM_LCD_COLS);
+	outBuf[NUM_LCD_COLS] = 0;
+
+	editData = getEditData();
+	len = strlen(editData->unit);
+	off = NUM_LCD_COLS - len;
+	if (len > 0) 
+	{
+		LCD->setCursor(off, 1);
+		LCD->write(editData->unit);
+		off--;
+	}
+	
+	value = *(editData->value);
+	itoa(value, &valBuf[0], 10);
+	len = strlen(valBuf);
+	off = off - len;
+
+	LCD->setCursor(off, 1);
+	LCD->print(valBuf);
+
+	LCD->setCursor(off-1, 1);
+	LCD->print(' ');
+}
+
 void Menu::displayStatus()
 {
 	LCD->setCursor(0, 0);
-	LCD->print("Hallo");
+	LCD->print("Status");
 
 	//LCD->setCursor(0, 3);
 	//LCD->print("         ");
@@ -89,6 +127,14 @@ void Menu::update()
 		changeMode(mode_standby);
 
 		//TODO power off display
+	}
+}
+
+void Menu::updateStatus()
+{
+	if (mode == mode_status)
+	{
+		displayStatus();
 	}
 }
 
