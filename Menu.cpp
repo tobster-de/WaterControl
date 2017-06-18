@@ -85,8 +85,27 @@ void Menu::displayEdit(MenuItem* menuItem)
 
 void Menu::displayStatus()
 {
+	char valBuf[5];
+	datetime now;
+
 	LCD->setCursor(0, 0);
 	LCD->print("Status");
+
+	now = this->clock->Time();
+	LCD->setCursor(NUM_LCD_COLS - 5, 0);
+	if (now.hour < 10)
+	{
+		LCD->print(" ");
+	}
+
+	LCD->print(now.hour);
+	LCD->print(":");
+
+	if (now.minute < 10)
+	{		
+		LCD->print("0");
+	}
+	LCD->print(now.minute);
 
 	//LCD->setCursor(0, 3);
 	//LCD->print("         ");
