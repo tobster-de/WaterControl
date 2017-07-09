@@ -47,8 +47,9 @@ Clock::Clock(RTC *rtc) : rtc(rtc)
 
 void Clock::Update()
 {
-	if (this->now.second == 0)
+	if (this->now.minute == 0 && this->now.second == 0)
 	{
+		// sync once in an hour with the RTC
 		datetime rtcnow = rtc->ReadTime();
 
 		if (IsValidTime(rtcnow))
