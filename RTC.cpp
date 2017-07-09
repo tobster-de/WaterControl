@@ -36,7 +36,7 @@ byte bcdToDec(byte val)
 /**
  * Die Uhrzeit auslesen und in den Variablen ablegen
  */
-datetime RTC::ReadTime()
+DateTime RTC::ReadTime()
 {
   byte dummy;
   // Reset the register pointer
@@ -65,7 +65,7 @@ datetime RTC::ReadTime()
 /**
  * Die Uhrzeit aus den Variablen in die DS1307 schreiben
  */
-void RTC::WriteTime(datetime dt)
+void RTC::WriteTime(DateTime dt)
 {
   Wire.beginTransmission(this->address);
   WIREWRITE(0x00); // 0 to bit 7 starts the clock

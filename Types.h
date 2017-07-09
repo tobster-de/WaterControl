@@ -21,20 +21,21 @@ struct _datetime
   word  year;
   */
 };
-typedef struct _datetime datetime;
+typedef struct _datetime DateTime;
 
 struct _hourminute
 {
-  byte  hour;
-  byte  minute;
+  byte hour;
+  byte minute;
 };
-typedef struct _hourminute hourminute;
+typedef struct _hourminute HourMinute;
 
 struct _pumpslot
 {
   _hourminute time;
-  int  duration;
+  int duration;
+  boolean active;
 };
-typedef struct _pumpslot pumpslot;
+typedef struct _pumpslot PumpTask;
 
 #endif

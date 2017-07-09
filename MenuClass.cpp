@@ -17,13 +17,17 @@ uint8_t MenuList::getSize()
 	return this->listSize;
 }
 
-void MenuList::setParent(MenuList * parent)
+void MenuList::setParent(MenuList * parent, int localIndex, int currentItemIndex)
 {
 	this->parent = parent;
+	this->parentLocalIndex = localIndex;
+	this->parentCurrentItemIndex = currentItemIndex;
 }
 
-MenuList * MenuList::getParent()
+MenuList * MenuList::getParent(int * localIndex, int * currentItemIndex)
 {
+	*localIndex = this->parentLocalIndex;
+	*currentItemIndex = this->parentCurrentItemIndex;
 	return parent;
 }
 
@@ -32,10 +36,11 @@ MenuList * MenuList::getParent()
 MenuClass::MenuClass(MenuList* mainMenu)
 {
 	millis_value = millis();
+	menu_refresh = millis_value + MENU_REFRESH;
 
 	this->mainMenu = mainMenu;
 	currentMenu = mainMenu;
-	currentItemIndex = topItemIndex = 0;
+	currentItemIndex = localIndex = 0;
 	currentItem = currentMenu->getItem(currentItemIndex);
 	changeMode(mode_status);
 }
@@ -49,14 +54,16 @@ void MenuClass::getText(char* aBuf, int aIndex)
 #endif
 }
 
-EditType * MenuClass::getEditData()
+FormatFunction MenuClass::getFormatFunction(int aIndex)
 {
+	FormatFunction theFunc;
+
 #ifdef USING_PROGMEM
-	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
-	return (EditType*)data->editData;
+	theFunc = (FormatFunction)pgm_read_word(&(currentMenu->getItem(aIndex)->format));
 #else
-	return currentItem->data->editData;
+	theFunc = (FormatFunction)(currentItem->getItem(aIndex)->format);
 #endif
+	return theFunc;
 }
 
 boolean MenuClass::runFunction()
@@ -64,10 +71,9 @@ boolean MenuClass::runFunction()
 	ItemFunction theFunc;
 
 #ifdef USING_PROGMEM
-	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
-	theFunc = data->function;
+	theFunc = (ItemFunction)pgm_read_word(&(currentItem->data));
 #else
-	theFunc = currentItem->data->function;
+	theFunc = (ItemFunction)(currentItem->data);
 #endif
 	return theFunc();
 }
@@ -86,11 +92,10 @@ ActionType MenuClass::getAction()
 
 MenuList* MenuClass::getSubMenu()
 {
-#ifdef USING_PROGMEM
-	ItemData* data = (ItemData*)pgm_read_word(&(currentItem->data));
-	return (MenuList*)data->subMenu;
+#ifdef USING_PROGMEM	
+	return (MenuList*)pgm_read_word(&(currentItem->data));
 #else
-	return currentItem->data->subMenu;
+	return (MenuList*)currentItem->data;
 #endif
 }
 
@@ -123,6 +128,11 @@ void MenuClass::update()
 			changeMode(mode_status);
 			displayStatus();
 		}
+		else if (millis_value >= menu_refresh)
+		{
+			menu_refresh = millis_value + MENU_REFRESH;
+			displayMenu();
+		}
 
 		if (changeValue != 0) 
 		{
@@ -136,6 +146,8 @@ void MenuClass::update()
 
 			currentItemIndex %= currentMenu->getSize();
 			currentItem = currentMenu->getItem(currentItemIndex);
+
+			updateLocalIndex(changeValue);
 
 			displayMenu();
 		}
@@ -157,30 +169,39 @@ void MenuClass::update()
 				if (action == enter_submenu)
 				{
 					MenuList *sub = getSubMenu();
-					sub->setParent(currentMenu);
+					sub->setParent(currentMenu, this->localIndex, this->currentItemIndex);
 					changeMode(mode);
-					setCurrentMenu(sub);
+					setCurrentMenu(sub, 0, 0);
 				}
 
 				if (action == return_menu)
 				{
-					MenuList *parent = currentMenu->getParent();
+					int parentLocalIndex, parentCurrentItem;
+					MenuList *parent = currentMenu->getParent(&parentLocalIndex, &parentCurrentItem);
 					changeMode(mode);
-					setCurrentMenu(parent);
+					setCurrentMenu(parent, parentLocalIndex, parentCurrentItem);
 				}
 
 				if (action == edit_value)
-				{					
-					changeMode(mode_edit);
-					displayEdit(currentItem);
+				{
+					currentEdit = NULL;
+					
+					runFunction();
+
+					if (currentEdit != NULL && mode != mode_edit)
+					{
+						changeMode(mode_edit);
+						displayEdit(currentEdit);
+					}
 				}
 			}
 			else if (cancelFlag)
 			{
-				MenuList *parent = currentMenu->getParent();
+				int parentLocalIndex, parentCurrentItem;
+				MenuList *parent = currentMenu->getParent(&parentLocalIndex, &parentCurrentItem);
 				if (parent != NULL)
 				{
-					setCurrentMenu(parent);
+					setCurrentMenu(parent, parentLocalIndex, parentCurrentItem);
 				}
 				else 
 				{
@@ -193,26 +214,42 @@ void MenuClass::update()
 	{
 		if (changeValue != 0)
 		{
-			EditType* editData = getEditData();
-			*editData->value += changeValue;
+			//EditType* editData = getEditData();
+			*currentEdit->value += changeValue;
 			
-			if (*editData->value > editData->maxValue)
+			if (*currentEdit->value > currentEdit->maxValue)
 			{
-				*editData->value = editData->minValue+(*editData->value-editData->maxValue);
+				*currentEdit->value = currentEdit->minValue + (*currentEdit->value - currentEdit->maxValue);
 			}
 
-			if (*editData->value < editData->minValue)
+			if (*currentEdit->value < currentEdit->minValue)
 			{
-				*editData->value = editData->maxValue - (editData->minValue - *editData->value) + 1;
+				*currentEdit->value = currentEdit->maxValue - (currentEdit->minValue - *currentEdit->value) + 1;
 			}
 
-			displayEdit(currentItem);
+			displayEdit(currentEdit);
 		}
 
 		if (enterFlag)
 		{
-			EditType* editData = getEditData();
-			editData->endEdit();
+			boolean returnToMenu = true;
+			ItemFunction endedit = currentEdit->endEdit;
+
+			if (endedit != NULL)
+			{
+				returnToMenu = endedit();
+			}
+
+			if (returnToMenu)
+			{
+				currentEdit = NULL;
+				changeMode(mode_menu);
+				displayMenu();
+			}
+		}
+
+		if (cancelFlag)
+		{
 			changeMode(mode_menu);
 			displayMenu();
 		}
@@ -224,7 +261,7 @@ void MenuClass::update()
 		if (/*changeValue != 0 ||*/ enterFlag)
 		{
 			changeMode(mode_menu);
-			setCurrentMenu(mainMenu);
+			setCurrentMenu(mainMenu, 0, 0);
 		}
 	}
 	else if (mode == mode_standby)
@@ -244,12 +281,25 @@ boolean MenuClass::checkCancel()
 void MenuClass::changeMode(MenuMode nextMode)
 {
 	this->mode = nextMode;
+	this->menu_timeout = millis() + MENU_TIMEOUT;
 }
 
-void MenuClass::setCurrentMenu(MenuList* aMenu)
+void MenuClass::setCurrentMenu(MenuList* aMenu, int localIndex, int currentItemIndex)
 {
-	currentMenu = aMenu;
-	currentItemIndex = topItemIndex = 0;
-	currentItem = currentMenu->getItem(currentItemIndex);
+	this->currentMenu = aMenu;
+	this->currentItemIndex = currentItemIndex;
+	this->localIndex = localIndex;
+	this->currentItem = this->currentMenu->getItem(this->currentItemIndex);
 	displayMenu();
+}
+
+void MenuClass::startEdit(EditType *anEdit)
+{
+	this->currentEdit = anEdit;
+
+	if (this->currentEdit != NULL)
+	{
+		this->changeMode(mode_edit);
+		this->displayEdit(this->currentEdit);
+	}
 }

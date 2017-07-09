@@ -8,7 +8,7 @@ Pump *pump;
 Pump::Pump(uint8_t pumpPin, Clock *clock) : pumpPin(pumpPin), clock(clock)
 {
 	this->LoadPumpSettings();
-	this->FindNextPumpSlot();
+	this->next = this->FindNextPumpTask();
 }
 
 void Pump::Check()
@@ -37,27 +37,26 @@ void Pump::Check()
 			}
 			else
 			{
-				this->FindNextPumpSlot();
+				this->next = this->FindNextPumpTask();
 			}
 		}
 	}
-
 }
 
-pumpslot Pump::FindNextPumpSlot()
+PumpTask Pump::FindNextPumpTask()
 {
 	int v1, v2, ix;
 	long minv = 1440;
-	datetime time = clock->Time();
+	DateTime time = clock->Time();
 
 	v2 = time.hour * 60 + time.minute;
 	for (int i = 0; i < 10; i++)
 	{
-		if (pumpSlots[i].duration == 0)
+		if (pumpTasks[i].duration == 0)
 		{
 			continue;
 		}
-		v1 = pumpSlots[i].time.hour * 60 + pumpSlots[i].time.minute;
+		v1 = pumpTasks[i].time.hour * 60 + pumpTasks[i].time.minute;
 		if (v1 > v2 && v1 - v2 < minv)
 		{
 #ifdef DEBUG
@@ -87,13 +86,14 @@ pumpslot Pump::FindNextPumpSlot()
 	if (minv < 1440)
 	{
 		toggleCounter = minv * 60 - time.second;
-		activeDuration = pumpSlots[ix].duration;
+		activeDuration = pumpTasks[ix].duration;
 
-		return pumpSlots[ix];
+		next = pumpTasks[ix];
+		return pumpTasks[ix];
 	}
 }
 
-boolean Pump::IsValidPumpSetting(pumpslot ps)
+boolean Pump::IsValidPumpTask(PumpTask ps)
 {
 	return ps.time.minute - (ps.time.minute % 60) == 0
 		&& ps.time.hour - (ps.time.hour % 24) == 0;
@@ -102,40 +102,45 @@ boolean Pump::IsValidPumpSetting(pumpslot ps)
 void Pump::LoadPumpSettings()
 {
 	byte low, high;
-	pumpslot pump;
+	PumpTask pump;
+	size_t size = sizeof(PumpTask);
 
 	for (int i = 0; i < 10; i++)
 	{
-		pump.time.hour = EEPROM.read(i * 4);
-		pump.time.minute = EEPROM.read(i * 4 + 1);
-		low = EEPROM.read(i * 4 + 2);
-		high = EEPROM.read(i * 4 + 3);
+		pump.time.hour = EEPROM.read(i * size);
+		pump.time.minute = EEPROM.read(i * size + 1);
+		low = EEPROM.read(i * size + 2);
+		high = EEPROM.read(i * size + 3);
 		pump.duration = low + (high << 8);
+		pump.active = EEPROM.read(i * size + 4);
 
-		if (IsValidPumpSetting(pump) && pump.duration > 0)
+		if (IsValidPumpTask(pump) && pump.duration > 0)
 		{
-			pumpSlots[i] = pump;
+			pumpTasks[i] = pump;
 		}
 		else
 		{
-			pumpSlots[i].time.hour = 0;
-			pumpSlots[i].time.minute = 0;
-			pumpSlots[i].duration = 0;
+			pumpTasks[i].time.hour = 0;
+			pumpTasks[i].time.minute = 0;
+			pumpTasks[i].duration = 0;
 		}
 	}
 }
 
-void Pump::StorePumpSetting(int slot, pumpslot ps)
+void Pump::StorePumpSetting(int slot, PumpTask ps)
 {
+	size_t size = sizeof(PumpTask);
 	int index = slot - 1;
+
 	if (slot >= 1 && slot <= 10)
 	{
-		pumpSlots[index] = ps;
+		pumpTasks[index] = ps;
 
-		EEPROM.write(index * 4, ps.time.hour);
-		EEPROM.write(index * 4 + 1, ps.time.minute);
-		EEPROM.write(index * 4 + 2, (ps.duration & 0xFF));         //low byte
-		EEPROM.write(index * 4 + 3, ((ps.duration >> 8) & 0xFF));  //high byte
+		EEPROM.write(index * size, ps.time.hour);
+		EEPROM.write(index * size + 1, ps.time.minute);
+		EEPROM.write(index * size + 2, (ps.duration & 0xFF));         //low byte
+		EEPROM.write(index * size + 3, ((ps.duration >> 8) & 0xFF));  //high byte
+		EEPROM.write(index * size + 4, ps.active);
 	}
 }
 
@@ -145,7 +150,7 @@ void Pump::PrintPumpSettings()
 	int count = 0;
 	for (int i = 0; i < 10; i++)
 	{
-		if (pumpSlots[i].duration == 0)
+		if (pumpTasks[i].duration == 0)
 		{
 			continue;
 		}
@@ -153,7 +158,7 @@ void Pump::PrintPumpSettings()
 		if (i < 10) Serial.print("0");
 		Serial.print(i + 1);
 		Serial.print(": at ");
-		PrintPumpSlot(pumpSlots[i]);
+		PrintPumpSlot(pumpTasks[i]);
 		count++;
 	}
 	if (count == 0)
@@ -168,12 +173,41 @@ void Pump::Activate(boolean onoff)
 	digitalWrite(this->pumpPin, onoff ? HIGH : LOW);
 }
 
+void Pump::Activate(long duration)
+{
+	this->isActive = false;
+	this->toggleCounter = duration;
+	this->Activate(true);
+}
+
 boolean Pump::IsActive()
 {
 	return this->isActive;
 }
 
-void Pump::PrintPumpSlot(pumpslot ps)
+long Pump::GetRemainingDuration()
+{
+	return isActive ? toggleCounter : 0;
+}
+
+PumpTask Pump::GetPumpTask(int slot)
+{
+	int index = slot - 1;
+	if (slot >= 1 && slot <= 10)
+	{
+		return this->pumpTasks[index];
+	}
+
+	PumpTask invalid;
+	return invalid;
+}
+
+PumpTask Pump::GetNextPumpTask()
+{
+	return this->next;
+}
+
+void Pump::PrintPumpSlot(PumpTask ps)
 {
 	if (ps.time.hour < 10) Serial.print("0");
 	Serial.print(ps.time.hour);

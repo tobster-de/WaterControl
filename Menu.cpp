@@ -23,15 +23,19 @@ boolean Menu::checkEnter()
 
 void Menu::displayMenu()
 {
-	int i;
+	int i, len;
 	char outBuf[NUM_LCD_COLS + 1];
-	int currentLine = this->topItemIndex;
+	char *valBuf;
+	int currentLine;
+	int topLine = this->currentItemIndex - this->localIndex;
 
-	outBuf[1] = ' ';
+	outBuf[NUM_LCD_COLS] = 0;
 
 	for (int i = 0; i < NUM_LCD_ROWS; i++)
 	{
-		currentLine = this->topItemIndex + i;
+		memset(&outBuf, 32, NUM_LCD_COLS);
+
+		currentLine = topLine + i;
 		if (currentLine >= currentMenu->getSize())
 		{
 			break;
@@ -39,29 +43,38 @@ void Menu::displayMenu()
 
 		outBuf[0] = (currentLine == this->currentItemIndex) ? '>' : ' ';
 		getText(outBuf + 2, currentLine);
+		outBuf[strlen(outBuf)] = ' ';
+
+		FormatFunction format = this->getFormatFunction(currentLine);
+		if (format != NULL)
+		{
+			valBuf = format();
+			len = strlen(valBuf);
+			if (len > 0)
+			{
+				strcpy(outBuf + NUM_LCD_COLS - len, valBuf);
+			}
+		}
 
 		LCD->setCursor(0, i);
 		LCD->print(outBuf);
 	}
 }
 
-void Menu::displayEdit(MenuItem* menuItem)
+void Menu::displayEdit(EditType* editData)
 {
-	EditType* editData;
+	//EditType* editData;
 	char outBuf[NUM_LCD_COLS + 1], valBuf[5];
 	long value;
 	int off;
 	size_t len;
-
-	getText(outBuf, this->currentItemIndex);
-
+	
 	LCD->setCursor(0, 0);
-	LCD->print(outBuf);
+	LCD->print(editData->label);
 
 	memset(&outBuf, 32, NUM_LCD_COLS);
 	outBuf[NUM_LCD_COLS] = 0;
 
-	editData = getEditData();
 	len = strlen(editData->unit);
 	off = NUM_LCD_COLS - len;
 	if (len > 0) 
@@ -86,7 +99,7 @@ void Menu::displayEdit(MenuItem* menuItem)
 void Menu::displayStatus()
 {
 	char valBuf[5];
-	datetime now;
+	DateTime now;
 
 	LCD->setCursor(0, 0);
 	LCD->print("Status");
@@ -117,6 +130,26 @@ void Menu::changeMode(MenuMode nextMode)
 {
 	MenuClass::changeMode(nextMode);
 	LCD->clear();
+}
+
+void Menu::updateLocalIndex(int diff)
+{
+	if (diff != 0)
+	{
+		if (this->currentItemIndex == currentMenu->getSize() - 1)
+		{
+			int menuSize = currentMenu->getSize();
+			this->localIndex = menuSize < NUM_LCD_ROWS ? menuSize - 1 :  NUM_LCD_ROWS - 1;
+		}
+		else if (this->currentItemIndex == 0)
+		{
+			this->localIndex = 0;
+		}
+		else if (this->localIndex + diff >= 0 && this->localIndex + diff < NUM_LCD_ROWS)
+		{
+			this->localIndex += diff;
+		}
+	}
 }
 
 void Menu::update()

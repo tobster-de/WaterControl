@@ -10,14 +10,14 @@
 
 class RTC 
 {
-  datetime now;
+  DateTime now;
   int address;
 
 public:
 	RTC(int address): address(address) {}
 
-	datetime ReadTime();
-	void WriteTime(datetime dt);
+	DateTime ReadTime();
+	void WriteTime(DateTime dt);
 };
 
 extern RTC *rtc;

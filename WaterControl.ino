@@ -12,46 +12,48 @@
 #include "RTC.h"           // real time clock DS1307
 #include "Pump.h"          // pump settings
 
+#define FORMAT_TASK_DECL(X)    char * FormatTask##X();
+#define FORMAT_TASK(X)         FormatTask##X
+
+#define EDIT_TASK_DECL(X)      boolean SetTaskTime##X(); \
+                               boolean EditTask##X();
+#define EDIT_TASK(X)           EditTask##X
+
+char* FormatPump();
 boolean ActivatePump();
-boolean SetTime();
+boolean StartPumping();
+
+char * FormatTask(int index);
+
+FORMAT_TASK_DECL(1)
+FORMAT_TASK_DECL(2)
+FORMAT_TASK_DECL(3)
+FORMAT_TASK_DECL(4)
+FORMAT_TASK_DECL(5)
+
+boolean EditTask(int index);
+
+EDIT_TASK_DECL(1)
+EDIT_TASK_DECL(2)
+EDIT_TASK_DECL(3)
+EDIT_TASK_DECL(4)
+EDIT_TASK_DECL(5)
+
+char* FormatClockTime();
+boolean EditClockTime();
+boolean SetClockTime();
 
 /*****************************************************************************************/
-
-long hour, minute;
-
-EditType hourEdit =
-{
-	&hour,
-	"",
-	0, 23, 1,
-	SetTime
-};
-
-ItemData hourItem = { .editData = &hourEdit };
-
-EditType minuteEdit =
-{
-	&minute,
-	"",
-	0, 59, 1,
-	SetTime
-};
-
-ItemData minuteItem = { .editData = &minuteEdit };
 
 MenuItem PROGMEM clockMenuItems[] =
 {
-	{ "..", return_menu, NULL },
-	{ "Stunde", edit_value, &hourItem },
-	{ "Minute", edit_value, &minuteItem }
+	{ "..", return_menu, NULL, NULL },
+	{ "Stellen", edit_value, EditTime, FormatClockTime },
 };
 
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
-ItemData clockItem = { .subMenu = &clockMenu };
 
 /*****************************************************************************************/
-
-ItemData activatePump = { .function = ActivatePump };
 
 //MenuItem PROGMEM action1MenuItems[] =
 //{
@@ -64,26 +66,27 @@ ItemData activatePump = { .function = ActivatePump };
 //MenuList action1Menu(action1MenuItems, menuListSize(action1MenuItems));
 //ItemData action1Item = { .subMenu = &action1Menu };
 
+long editDuration;
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
 	{ "..", return_menu, NULL },
-	{ "Aktivieren", call_function, &activatePump},
-	//{ "Aktion 1", enter_submenu, &action1Item },
-	//{ "Aktion 2", enter_submenu, &activatePump },
-	//{ "Aktion 3", enter_submenu, &activatePump },
-	//{ "Aktion 4", enter_submenu, &activatePump },
-	//{ "Aktion 5", enter_submenu, &activatePump },
+	{ "Manuell", edit_value, ActivatePump, FormatPump },
+	{ "Aktion 1", edit_value, EDIT_TASK(1), FORMAT_TASK(1) },
+	{ "Aktion 2", edit_value, EDIT_TASK(2), FORMAT_TASK(2) },
+	{ "Aktion 3", edit_value, EDIT_TASK(3), FORMAT_TASK(3) },
+	{ "Aktion 4", edit_value, EDIT_TASK(4), FORMAT_TASK(4) },
+	{ "Aktion 5", edit_value, EDIT_TASK(5), FORMAT_TASK(5) },
 };
+
 MenuList pumpMenu(pumpMenuItems, menuListSize(pumpMenuItems));
-ItemData pumpItem = { .subMenu = &pumpMenu };
 
 /*****************************************************************************************/
 
 MenuItem PROGMEM menuItems[] =
 {
-	{ "Uhr", enter_submenu,  &clockItem },
-	{ "Pumpe", enter_submenu,  &pumpItem },
+	{ "Uhr", enter_submenu,  &clockMenu, NULL },
+	{ "Pumpe", enter_submenu,  &pumpMenu, NULL },
 };
 
 MenuList menuList(menuItems, menuListSize(menuItems));
@@ -143,7 +146,6 @@ void setup()
 	attachInterrupt(0, rtcTimerIsr, RISING);
 }
 
-
 void loop()
 {
 	mainMenu->update();
@@ -163,26 +165,185 @@ void loop()
 	}
 }
 
-boolean ActivatePump()
-{
-	LCD->setCursor(0, 0);
-	LCD->print("Pumpe");
+/*****************************************************************************************/
 
-	pump->Activate(!pump->IsActive());
+char * FormatTime(byte hour, byte minute)
+{
+	static char outBuf[NUM_LCD_COLS + 1];
+	char valBuf[5];
+	int off = 0;
+
+	itoa(hour, outBuf, 10);
+	strcat(outBuf, ":");
+
+	itoa(minute, valBuf, 10);
+	if (minute < 10)
+	{
+		strcat(outBuf, "0");
+	}
+	strcat(outBuf, valBuf);
+
+	return outBuf;
+}
+
+long editHour, editMinute;
+ItemFunction editTimeCallback = NULL;
+
+boolean EditHourComplete()
+{
+	static EditType minuteEdit =
+	{
+		"Minute",
+		&editMinute,
+		"",
+		0, 59, 1,
+		editTimeCallback
+	};
+
+	mainMenu->startEdit(&minuteEdit);
+
+	// edit minute, so do not return to menu yet
+	return false;
+}
+
+boolean EditTime(byte hour, byte minute, ItemFunction callback)
+{
+	editHour = hour;
+	editMinute = minute;
+	editTimeCallback = callback;
+
+	static EditType hourEdit =
+	{
+		"Stunde",
+		&editHour,
+		"",
+		0, 23, 1,
+		EditHourComplete
+	};
+
+	mainMenu->startEdit(&hourEdit);
 
 	return true;
 }
 
 
-boolean SetTime()
+/*****************************************************************************************/
+
+char * FormatPump()
 {
-	datetime newtime;
+	static char valBuf[10];
+	long remain;
+
+	if (pump->IsActive())
+	{
+		remain = pump->GetRemainingDuration();
+		itoa(remain, valBuf, 10);
+		strcat(valBuf, " s");
+		return valBuf;
+	}
+
+	return "Aus";
+}
+
+boolean ActivatePump()
+{
+	if (editDuration == 0)
+	{
+		editDuration = 5;
+	}
+
+	static EditType durationEdit =
+	{
+		"Dauer",
+		&editDuration,
+		"s",
+		1, 600, 1,
+		StartPumping
+	};
+
+	mainMenu->startEdit(&durationEdit);
+
+	return true;
+}
+
+boolean StartPumping()
+{
+	if (pump->IsActive())
+	{
+		pump->Activate(false);
+	}
+	else 
+	{
+		pump->Activate(editDuration);
+	}
+	return true;
+}
+
+char * FormatTask(int index)
+{
+	PumpTask pt = pump->GetPumpTask(index);
+	if (!pump->IsValidPumpTask(pt) || pt.duration == 0)
+	{
+		return "--:--";
+	}
+
+	return FormatTime(pt.time.hour, pt.time.minute);
+}
+
+#define FORMAT_TASK_DEF(X)    \
+char * FormatTask##X() { \
+    FormatTask(X);\
+}
+
+FORMAT_TASK_DEF(1)
+FORMAT_TASK_DEF(2)
+FORMAT_TASK_DEF(3)
+FORMAT_TASK_DEF(4)
+FORMAT_TASK_DEF(5)
+
+#define EDIT_TASK_DEF(X)    \
+boolean SetTaskTime##X() { \
+    PumpTask pt; \
+    pt.time.hour = editHour; \
+    pt.time.minute = editMinute; \
+    pump->StorePumpSetting(X, pt); \
+    return true; \
+} \
+boolean EditTask##X() { \
+    PumpTask pt = pump->GetPumpTask(X); \
+    EditTime(pt.time.hour, pt.time.minute, SetTaskTime##X); \
+    return true; \
+}
+
+EDIT_TASK_DEF(1)
+EDIT_TASK_DEF(2)
+EDIT_TASK_DEF(3)
+EDIT_TASK_DEF(4)
+EDIT_TASK_DEF(5)
+
+char * FormatClockTime()
+{
+	char outBuf[NUM_LCD_COLS + 1], valBuf[5];
+	DateTime now = clock->Time();
+	return FormatTime(now.hour, now.minute);
+}
+
+boolean EditClockTime()
+{
+	DateTime now = clock->Time();
+	EditTime(now.hour, now.minute, SetClockTime);
+}
+
+boolean SetClockTime()
+{
+	DateTime newtime;
 	
-	newtime.hour = hour;
-	newtime.minute = minute;
+	newtime.hour = editHour;
+	newtime.minute = editMinute;
 	newtime.second = 0;
 
 	clock->Set(newtime);
 
+	// return to menu
 	return true;
 }

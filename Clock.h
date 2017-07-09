@@ -10,21 +10,21 @@
 class Clock
 {
 private:
-	datetime now;
+	DateTime now;
 	RTC *rtc;
 
 	void updateTime();
 
-	boolean IsValidTime(datetime dt);
-	void ResetTime(datetime *dt);
+	boolean IsValidTime(DateTime dt);
+	void ResetTime(DateTime *dt);
 
 public:
 	Clock(RTC *rtc);
 
 	void Update();
-	datetime Time();
+	DateTime Time();
 
-	void Set(datetime dt);
+	void Set(DateTime dt);
 };
 
 extern Clock *clock;

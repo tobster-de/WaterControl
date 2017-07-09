@@ -34,7 +34,7 @@ void Clock::updateTime()
 
 Clock::Clock(RTC *rtc) : rtc(rtc)
 {
-	datetime rtcnow = rtc->ReadTime();
+	DateTime rtcnow = rtc->ReadTime();
 
 	if (!IsValidTime(rtcnow))
 	{
@@ -50,7 +50,7 @@ void Clock::Update()
 	if (this->now.minute == 0 && this->now.second == 0)
 	{
 		// sync once in an hour with the RTC
-		datetime rtcnow = rtc->ReadTime();
+		DateTime rtcnow = rtc->ReadTime();
 
 		if (IsValidTime(rtcnow))
 		{
@@ -63,12 +63,12 @@ void Clock::Update()
 	}
 }
 
-datetime Clock::Time()
+DateTime Clock::Time()
 {
 	return now;
 }
 
-void Clock::Set(datetime dt)
+void Clock::Set(DateTime dt)
 {
 	if (this->IsValidTime(dt))
 	{
@@ -93,14 +93,14 @@ void SerialOutputTime(datetime dt)
 }
 */
 
-boolean Clock::IsValidTime(datetime dt)
+boolean Clock::IsValidTime(DateTime dt)
 {
 	return dt.second - (dt.second % 60) == 0
 		&& dt.minute - (dt.minute % 60) == 0
 		&& dt.hour - (dt.hour % 24) == 0;
 }
 
-void Clock::ResetTime(datetime *dt)
+void Clock::ResetTime(DateTime *dt)
 {
 	dt->second = 0;
 	dt->minute = 0;

@@ -32,8 +32,9 @@ protected:
 	boolean checkEnter();
 	void displayMenu();
 	void displayStatus();
-	void displayEdit(MenuItem*);
-	void changeMode(MenuMode nextMode);
+	void displayEdit(EditType*);
+	void changeMode(MenuMode);
+	void updateLocalIndex(int);
 
 public:
 	Menu(LiquidCrystal_PCF8574* aLCD, ClickEncoder* aEncoder, MenuList *menu, Clock *aClock) : 

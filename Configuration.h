@@ -23,6 +23,7 @@
 #define NUM_LCD_ROWS		4
 #define NUM_LCD_COLS		20
 
+#define MENU_REFRESH		1000    // automatically refresh menu 
 #define MENU_TIMEOUT		10000   // automatically close menu -> status
 #define LIGHT_TIMEOUT		20000   // turn light off
 #define DISPLAY_TIMEOUT		30000   // power off display
