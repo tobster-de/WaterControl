@@ -15,8 +15,7 @@
 #define FORMAT_TASK_DECL(X)    char * FormatTask##X();
 #define FORMAT_TASK(X)         FormatTask##X
 
-#define EDIT_TASK_DECL(X)      boolean SetTaskTime##X(); \
-                               boolean EditTask##X();
+#define EDIT_TASK_DECL(X)      boolean EditTask##X();
 #define EDIT_TASK(X)           EditTask##X
 
 char* FormatPump();
@@ -30,8 +29,6 @@ FORMAT_TASK_DECL(2)
 FORMAT_TASK_DECL(3)
 FORMAT_TASK_DECL(4)
 FORMAT_TASK_DECL(5)
-
-boolean EditTask(int index);
 
 EDIT_TASK_DECL(1)
 EDIT_TASK_DECL(2)
@@ -54,19 +51,6 @@ MenuItem PROGMEM clockMenuItems[] =
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
 
 /*****************************************************************************************/
-
-//MenuItem PROGMEM action1MenuItems[] =
-//{
-//	{ "..", return_menu, NULL },
-//	{ "Stunde", edit_value, &pump },
-//	{ "Minute", edit_value, &minuteItem },
-//    { "Dauer", edit_value, &minuteItem }
-//};
-//
-//MenuList action1Menu(action1MenuItems, menuListSize(action1MenuItems));
-//ItemData action1Item = { .subMenu = &action1Menu };
-
-long editDuration;
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
@@ -206,7 +190,7 @@ boolean EditHourComplete()
 	return false;
 }
 
-boolean EditTime(byte hour, byte minute, ItemFunction callback)
+void EditTime(byte hour, byte minute, ItemFunction callback)
 {
 	editHour = hour;
 	editMinute = minute;
@@ -222,12 +206,11 @@ boolean EditTime(byte hour, byte minute, ItemFunction callback)
 	};
 
 	mainMenu->startEdit(&hourEdit);
-
-	return true;
 }
 
-
 /*****************************************************************************************/
+
+long editDuration = 0;
 
 char * FormatPump()
 {
@@ -245,12 +228,9 @@ char * FormatPump()
 	return "Aus";
 }
 
-boolean ActivatePump()
+void EditDuration(long duration, ItemFunction callback)
 {
-	if (editDuration == 0)
-	{
-		editDuration = 5;
-	}
+	editDuration = duration == 0 ? 10 : duration;
 
 	static EditType durationEdit =
 	{
@@ -258,24 +238,32 @@ boolean ActivatePump()
 		&editDuration,
 		"s",
 		1, 600, 1,
-		StartPumping
+		callback
 	};
 
 	mainMenu->startEdit(&durationEdit);
+}
+
+boolean ActivatePump()
+{
+	if (pump->IsActive())
+	{
+		pump->Activate(false);
+		return;
+	}
+
+	EditDuration(30, StartPumping);
 
 	return true;
 }
 
 boolean StartPumping()
 {
-	if (pump->IsActive())
-	{
-		pump->Activate(false);
-	}
-	else 
+	if (editDuration > 0)
 	{
 		pump->Activate(editDuration);
 	}
+
 	return true;
 }
 
@@ -290,9 +278,9 @@ char * FormatTask(int index)
 	return FormatTime(pt.time.hour, pt.time.minute);
 }
 
-#define FORMAT_TASK_DEF(X)    \
+#define FORMAT_TASK_DEF(X) \
 char * FormatTask##X() { \
-    FormatTask(X);\
+    FormatTask(X); \
 }
 
 FORMAT_TASK_DEF(1)
@@ -301,18 +289,29 @@ FORMAT_TASK_DEF(3)
 FORMAT_TASK_DEF(4)
 FORMAT_TASK_DEF(5)
 
-#define EDIT_TASK_DEF(X)    \
-boolean SetTaskTime##X() { \
-    PumpTask pt; \
-    pt.time.hour = editHour; \
-    pt.time.minute = editMinute; \
-    pump->StorePumpSetting(X, pt); \
+void StoreTask(int slot)
+{
+	PumpTask pt; 
+	pt.time.hour = editHour; 
+	pt.time.minute = editMinute; 
+	pt.duration = editDuration;
+	pump->StorePumpSetting(slot, pt); 
+}
+
+#define EDIT_TASK_DEF(X) \
+boolean StoreTask##X() { \
+    StoreTask(X); \
     return true; \
+} \
+boolean EditTaskTimeComplete##X() { \
+    PumpTask pt = pump->GetPumpTask(X); \
+    EditDuration(pt.duration, StoreTask##X); \
+    return false; \
 } \
 boolean EditTask##X() { \
     PumpTask pt = pump->GetPumpTask(X); \
-    EditTime(pt.time.hour, pt.time.minute, SetTaskTime##X); \
-    return true; \
+    EditTime(pt.time.hour, pt.time.minute, EditTaskTimeComplete##X); \
+    return false; \
 }
 
 EDIT_TASK_DEF(1)
