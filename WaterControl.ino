@@ -1,3 +1,4 @@
+#include "SunTracker.h"
 #include "Calendar.h"
 #include <TimerOne.h>
 #include <LiquidCrystal_PCF8574.h>

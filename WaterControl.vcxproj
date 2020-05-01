@@ -91,6 +91,7 @@
     <ClCompile Include="MenuClass.cpp" />
     <ClCompile Include="Pump.cpp" />
     <ClCompile Include="RTC.cpp" />
+    <ClCompile Include="SunTracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calendar.h" />
@@ -102,6 +103,7 @@
     <ClInclude Include="MenuClass.h" />
     <ClInclude Include="Pump.h" />
     <ClInclude Include="RTC.h" />
+    <ClInclude Include="SunTracker.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="__vm\.WaterControl.vsarduino.h" />
   </ItemGroup>

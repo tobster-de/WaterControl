@@ -51,6 +51,9 @@
     <ClInclude Include="Calendar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SunTracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LCD.cpp">
@@ -75,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Calendar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SunTracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -12,14 +12,6 @@
 #define ADD_OFFSET(Y)          ( (Y)+ YEAR_OFFSET )
 #define SUB_OFFSET(Y)          ( (Y)- YEAR_OFFSET )
 
-// avoid magic numbers
-#define SECONDS_PER_MIN        (60UL)
-#define MINUTES_PER_HOUR       (60UL)
-#define HOURS_PER_DAY          (24UL)
-#define SECONDS_PER_HOUR       (MINUTES_PER_HOUR * SECONDS_PER_MIN)
-#define SECONDS_PER_DAY        (HOURS_PER_DAY * SECONDS_PER_HOUR)
-#define MONTH_PER_YEAR         (12UL)
-
 #define LEAP_YEAR(Y) \
     ( ((Y)>0) && !((Y)%4) && ( ((Y)%100) || !((Y)%400) ) )
 
