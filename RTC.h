@@ -8,16 +8,16 @@
 
 #include "Types.h"
 
-class RTC 
+class RTC
 {
-  DateTime now;
-  int address;
+    DateTime now;
+    int address;
 
 public:
-	RTC(int address): address(address) {}
+    RTC(int address) : address(address) {}
 
-	DateTime ReadTime();
-	void WriteTime(DateTime dt);
+    DateTime ReadTime();
+    void WriteTime(DateTime dt);
 };
 
 extern RTC *rtc;

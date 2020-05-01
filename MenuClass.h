@@ -21,7 +21,7 @@ typedef char* (*FormatFunction)();
 typedef enum
 {
 	mode_standby,    // e.g. deactivated display 
-	mode_status,     //	status screen
+	mode_status,     // status screen
 	mode_menu,       // menu browsing
 	mode_edit,       // edit value
 	mode_func        // execute external function
