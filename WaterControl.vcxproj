@@ -63,10 +63,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\libraries\LiquidCrystal_PCF8574-1.1.0\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\EEPROM\src;$(ProjectDir)..\libraries\TimerOne;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src\utility;$(ProjectDir)..\..\arduino-1.6.12\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries;$(ProjectDir)..\libraries;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\variants\standard;$(ProjectDir)..\WaterControl;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\avr\;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\WaterControl;$(ProjectDir)..\libraries\TimerOne;$(ProjectDir)..\libraries\LiquidCrystal_PCF8574-1.1.0\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\EEPROM\src;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\libraries\Wire\src\utility;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\arduino-1.6.12\hardware\arduino\avr\variants\standard;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include-fixed;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\avr\include\avr;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\arduino-1.6.12\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.WaterControl.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;F_CPU=16000000L;ARDUINO=106012;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__AVR_atmega328p__;__AVR_ATmega328P__;__AVR_ATmega328p__;F_CPU=16000000L;ARDUINO=106012;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -83,6 +83,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Calendar.cpp" />
     <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Encoder\ClickEncoder.cpp" />
     <ClCompile Include="LCD.cpp" />
@@ -92,6 +93,7 @@
     <ClCompile Include="RTC.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Calendar.h" />
     <ClInclude Include="Clock.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Encoder\ClickEncoder.h" />

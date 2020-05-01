@@ -7,19 +7,22 @@
 #include <WProgram.h>
 #endif
 
+/*
+ * unix like timestamp (custom offset)
+ */
+typedef unsigned long timestamp_t;
+
 struct _datetime
 {
     // time
     byte  hour;
     byte  minute;
     byte  second;
-    /*
     // date
     byte  dayOfWeek;
     byte  day;
     byte  month;
     word  year;
-    */
 };
 typedef struct _datetime DateTime;
 
