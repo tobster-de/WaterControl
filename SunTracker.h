@@ -20,7 +20,7 @@ class SunTracker
     double longitude;       // location of the tracker
     double tzOffset;        // offset of timezone to UTC in hours
 
-    double CalcMeanLocalTimeDifference(DateTime &dateTime, double angle, boolean sign) const;
+    boolean CalcTimeForAltitude(DateTime &dateTime, double angle, boolean beforeMean) const;
 public:
     SunTracker(double latitude, double longitude, double timezoneOffset) :
         latitude(latitude),
@@ -30,8 +30,8 @@ public:
 
     void Update(DateTime &dateTime);
 
-    void CalcSunrise(DateTime &datetime, double angle = 0);
-    void CalcSunset(DateTime &datetime, double angle = 0);
+    boolean CalcSunrise(DateTime &dateTime, double angle = 0) const;
+    boolean CalcSunset(DateTime &dateTime, double angle = 0) const;
 
     double GetAltitude() const
     {

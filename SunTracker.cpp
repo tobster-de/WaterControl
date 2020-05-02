@@ -49,49 +49,54 @@ void SunTracker::Update(DateTime &dateTime)
     }
 }
 
-double SunTracker::CalcMeanLocalTimeDifference(DateTime& dateTime, double angle, boolean sign) const
+/*
+ * Calculate the time when the sun has the provided altitude.
+ * As this happens twice a day, the third parameter defines whether to respect
+ * the time before or after the mean local time.
+ */
+boolean SunTracker::CalcTimeForAltitude(DateTime& dateTime, double angle, boolean beforeMean) const
 {
     const uint16_t dayOfYear = Calendar::DayOfYear(dateTime);
     const double equation = EQ_OF_TIME(dayOfYear);
     const double declination = DECLINATION(dayOfYear);
 
     // this is a bit prone to loss of precision, result will be off some seconds
-    const double local = (sin(angle * DEG_TO_RAD) - sin(latitude * DEG_TO_RAD) * sin(declination * DEG_TO_RAD))
+    const double temp = (sin(angle * DEG_TO_RAD) - sin(latitude * DEG_TO_RAD) * sin(declination * DEG_TO_RAD))
         / (cos(latitude * DEG_TO_RAD)*cos(declination * DEG_TO_RAD));
-    const double meanLocalTime = 12 * acos(local) / PI;
+    
+    // the provided altitude is never reached (arccos undefined)
+    if (fabs(temp) > 1) return false;
+    
+    const double localTimeDiff = 12 * acos(temp) / PI;
 
     const double diff = -longitude / 15 + tzOffset;
-    return 12 - equation + diff + meanLocalTime * (sign ? -1 : 1);
+
+    // this ignores fractions of seconds, which is OK
+    unsigned long value = 12 - equation + diff + localTimeDiff * (beforeMean ? -1 : 1) * SECONDS_PER_HOUR;
+
+    dateTime.second = value % SECONDS_PER_MIN;
+    value /= SECONDS_PER_MIN;                     // now it is minutes
+    dateTime.minute = value % MINUTES_PER_HOUR;
+    value /= MINUTES_PER_HOUR;                    // now it is hours
+    dateTime.hour = value % HOURS_PER_DAY;
+
+    return true;
 }
 
 /*
  * Calculates the time of sunrise of the provided date.
  * Sunrise time is stored within provided DateTime struct.
  */
-void SunTracker::CalcSunrise(DateTime& dateTime, double angle)
+boolean SunTracker::CalcSunrise(DateTime& dateTime, double angle) const
 {
-    // this ignores fractions of seconds, which is OK
-    unsigned long value = CalcMeanLocalTimeDifference(dateTime, angle, true) * SECONDS_PER_HOUR;
-
-    dateTime.second = value % SECONDS_PER_MIN;
-    value /= SECONDS_PER_MIN;                     // now it is minutes
-    dateTime.minute = value % MINUTES_PER_HOUR;
-    value /= MINUTES_PER_HOUR;                    // now it is hours
-    dateTime.hour = value % HOURS_PER_DAY;
+    return CalcTimeForAltitude(dateTime, angle, true);
 }
 
 /*
  * Calculates the time of sunset of the provided date.
  * Sunset time is stored within provided DateTime struct.
  */
-void SunTracker::CalcSunset(DateTime& dateTime, double angle)
+boolean SunTracker::CalcSunset(DateTime& dateTime, double angle) const
 {
-    // this ignores fractions of seconds, which is OK
-    unsigned long value = CalcMeanLocalTimeDifference(dateTime, angle, false) * SECONDS_PER_HOUR;
-
-    dateTime.second = value % SECONDS_PER_MIN;
-    value /= SECONDS_PER_MIN;                     // now it is minutes
-    dateTime.minute = value % MINUTES_PER_HOUR;
-    value /= MINUTES_PER_HOUR;                    // now it is hours
-    dateTime.hour = value % HOURS_PER_DAY;
+    return CalcTimeForAltitude(dateTime, angle, false);
 }
