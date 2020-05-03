@@ -13,6 +13,7 @@
 #include "Clock.h"         // clock
 #include "RTC.h"           // real time clock DS1307
 #include "Pump.h"          // pump settings
+#include "SunTracker.h"    // sun tracking calculations
 
 #define FORMAT_TASK_DECL(X)    char * FormatTask##X();
 #define FORMAT_TASK(X)         FormatTask##X
@@ -108,6 +109,7 @@ void setup()
     rtc = new RTC(RTC_I2C_ADDR);
     clock = new Clock(rtc);
     pump = new Pump(PUMP_PIN, clock);
+    sunTracker = new SunTracker(clock, 51.3627, 9.4674, 2);
 
     encoder = new ClickEncoder((uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B, (uint8_t)ENCODER_BUTTON, ENCODER_STEPS);
 
@@ -118,7 +120,7 @@ void setup()
     LCD->clear();
     LCD->setBacklight(255);
 
-    mainMenu = new Menu(LCD, encoder, &menuList, clock);
+    mainMenu = new Menu(LCD, encoder, &menuList, clock, sunTracker);
 
     // blink LED three times as 'hello'
     for (int i = 0; i < 3; i++)
@@ -148,6 +150,7 @@ void loop()
         clock->Update();
 
         pump->Check();
+        sunTracker->update();
     }
 }
 

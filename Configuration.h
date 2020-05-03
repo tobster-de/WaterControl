@@ -15,8 +15,8 @@
 #define RTC_I2C_ADDR        0x68
 #define DISPLAY_I2C_ADDR    0x3F
 
-#define ENCODER_PIN_A       5       // digital pin 5
-#define ENCODER_PIN_B       4       // digital pin 4
+#define ENCODER_PIN_A       9       // digital pin 9
+#define ENCODER_PIN_B       10      // digital pin 10
 #define ENCODER_BUTTON      3       // digital pin 3 (interrupt)
 #define ENCODER_STEPS       4U      // steps per notch
 

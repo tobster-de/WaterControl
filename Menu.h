@@ -10,42 +10,51 @@
 #include "Encoder/ClickEncoder.h"
 #include "LCD.h"
 #include "Clock.h"
+#include "SunTracker.h"
 
-class Menu: public MenuClass 
+class Menu : public MenuClass
 {
 private:
-	LiquidCrystal_PCF8574 *LCD;
-	ClickEncoder* encoder;
-	ClickEncoder::Button button;
-	Clock *clock;
+    LiquidCrystal_PCF8574 *LCD;
+    ClickEncoder* encoder;
+    ClickEncoder::Button button;
+    Clock *clock;
+    SunTracker *sunTracker;
 
-	boolean buttonFlag;
-	boolean buttonLongFlag;
-	int encoderValue;
+    boolean buttonFlag;
+    boolean buttonLongFlag;
+    int encoderValue;
 
-	unsigned long light_timeout;
-	unsigned long power_timeout;
+    unsigned long light_timeout;
+    unsigned long power_timeout;
 
 protected:
-	int updateSelection();
-	boolean checkCancel();
-	boolean checkEnter();
-	void displayMenu();
-	void displayStatus();
-	void displayEdit(EditType*);
-	void changeMode(MenuMode);
-	void updateLocalIndex(int);
+    int updateSelection();
+    boolean checkCancel();
+    boolean checkEnter();
+    void displayMenu();
+    void displayStatus();
+    void displayEdit(EditType*);
+    void changeMode(MenuMode);
+    void updateLocalIndex(int);
 
 public:
-	Menu(LiquidCrystal_PCF8574* aLCD, ClickEncoder* aEncoder, MenuList *menu, Clock *aClock) : 
-		MenuClass(menu), LCD(aLCD), encoder(aEncoder), clock(aClock), buttonFlag(false), encoderValue(0), buttonLongFlag(false) 
-	{
-		light_timeout = millis_value + LIGHT_TIMEOUT;
-		power_timeout = millis_value + DISPLAY_TIMEOUT;
-	}
+    Menu(LiquidCrystal_PCF8574* aLCD, ClickEncoder* aEncoder, MenuList *menu, Clock *aClock, SunTracker *aSunTracker) :
+        MenuClass(menu),
+        LCD(aLCD),
+        encoder(aEncoder),
+        clock(aClock),
+        sunTracker(aSunTracker),
+        buttonFlag(false),
+        buttonLongFlag(false),
+        encoderValue(0)
+    {
+        light_timeout = millis_value + LIGHT_TIMEOUT;
+        power_timeout = millis_value + DISPLAY_TIMEOUT;
+    }
 
-	void update();
-	void updateStatus();
+    void update();
+    void updateStatus();
 };
 
 extern Menu *mainMenu;

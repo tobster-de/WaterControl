@@ -7,74 +7,74 @@ Clock *clock;
 
 void Clock::updateTime()
 {
-	// Add 1 second
-	this->now.second++;
+    // Add 1 second
+    this->now.second++;
 
-	// Add 1 minute
-	if (this->now.second == 60)
-	{
-		this->now.second = 0;
-		this->now.minute++;
+    // Add 1 minute
+    if (this->now.second >= 60)
+    {
+        this->now.second = 0;
+        this->now.minute++;
 
-		// Add 1 hour	
-		if (this->now.minute == 60)
-		{
-			this->now.minute = 0;
-			this->now.hour++;
+        // Add 1 hour
+        if (this->now.minute >= 60)
+        {
+            this->now.minute = 0;
+            this->now.hour++;
 
-			// Add 1 day
-			if (this->now.hour == 24)
-			{
-				this->now.hour = 0;
-				//updateDate();
-			}
-		}
-	}
+            // Add 1 day
+            if (this->now.hour >= 24)
+            {
+                this->now.hour = 0;
+                //updateDate();
+            }
+        }
+    }
 }
 
 Clock::Clock(RTC *rtc) : rtc(rtc)
 {
-	DateTime rtcnow = rtc->ReadTime();
+    DateTime rtcnow = rtc->ReadTime();
 
-	if (!IsValidTime(rtcnow))
-	{
-		this->ResetTime(&rtcnow);
-		rtc->WriteTime(rtcnow);
-	}
+    if (!IsValidTime(rtcnow))
+    {
+        this->ResetTime(&rtcnow);
+        rtc->WriteTime(rtcnow);
+    }
 
-	this->now = rtcnow;
+    this->now = rtcnow;
 }
 
 void Clock::Update()
 {
-	if (this->now.minute == 0 && this->now.second == 0)
-	{
-		// sync once in an hour with the RTC
-		DateTime rtcnow = rtc->ReadTime();
+    if (this->now.minute == 0 && this->now.second == 0)
+    {
+        // sync once in an hour with the RTC
+        DateTime rtcnow = rtc->ReadTime();
 
-		if (IsValidTime(rtcnow))
-		{
-			this->now = rtcnow;
-		}
-	} 
-	else 
-	{
-		updateTime();
-	}
+        if (IsValidTime(rtcnow))
+        {
+            this->now = rtcnow;
+        }
+    }
+    else
+    {
+        updateTime();
+    }
 }
 
 DateTime Clock::Time()
 {
-	return now;
+    return now;
 }
 
 void Clock::Set(DateTime dt)
 {
-	if (this->IsValidTime(dt))
-	{
-		this->now = dt;
-		rtc->WriteTime(dt);
-	}
+    if (this->IsValidTime(dt))
+    {
+        this->now = dt;
+        rtc->WriteTime(dt);
+    }
 }
 
 /*
@@ -95,14 +95,14 @@ void SerialOutputTime(datetime dt)
 
 boolean Clock::IsValidTime(DateTime dt)
 {
-	return dt.second - (dt.second % 60) == 0
-		&& dt.minute - (dt.minute % 60) == 0
-		&& dt.hour - (dt.hour % 24) == 0;
+    return dt.second - (dt.second % 60) == 0
+        && dt.minute - (dt.minute % 60) == 0
+        && dt.hour - (dt.hour % 24) == 0;
 }
 
 void Clock::ResetTime(DateTime *dt)
 {
-	dt->second = 0;
-	dt->minute = 0;
-	dt->hour = 0;
+    dt->second = 0;
+    dt->minute = 0;
+    dt->hour = 0;
 }

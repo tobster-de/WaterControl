@@ -6,44 +6,55 @@
 #include "SunTracker.h"
 #include "Calendar.h"
 
-#define AXIAL_TILT        23.43665F               // axial tilt, see https://en.wikipedia.org/wiki/Axial_tilt
+SunTracker *sunTracker;                           // already usable instance variable
 
- // declination of the sun
+#ifndef radians
+#define DEG_TO_RAD        0.017453292519943295769236907684886
+#define radians(deg)      ((deg)*DEG_TO_RAD)
+#endif
+
+#ifndef degrees
+#define RAD_TO_DEG        57.295779513082320876798154814105
+#define degrees(rad)      ((rad)*RAD_TO_DEG)
+#endif
+
+#define AXIAL_TILT        23.43665L               // axial tilt, see https://en.wikipedia.org/wiki/Axial_tilt
+
+ // declination of the sun, within the tropical circles
 #define DECLINATION(DOY) \
-    ( cos(TWO_PI * ((DOY) + 10) / 365) * -AXIAL_TILT )
+    ( radians( cos(TWO_PI * ((DOY) + 10) / 365) * -AXIAL_TILT ) )
 
 // equation of time
 #define EQ_OF_TIME(DOY) \
     ( -0.171 * sin(0.0337 * (DOY) + 0.465) - 0.1299 * sin(0.01787 * (DOY) - 0.168) )
 
-void SunTracker::Update(DateTime &dateTime)
+void SunTracker::update()
 {
-    dayOfYear = Calendar::DayOfYear(dateTime);
+    DateTime now = clock->Time();
+    dayOfYear = Calendar::DayOfYear(now);
 
     if (dayOfYear != lastDayOfYear)              // these only depend on the date not the time, so spare recalculation
     {
         // https://lexikon.astronomie.info/zeitgleichung/
 
-        declination = DECLINATION(dayOfYear);
+        declinationInRad = DECLINATION(dayOfYear);
         equationOfTime = EQ_OF_TIME(dayOfYear);
 
         lastDayOfYear = dayOfYear;
     }
 
     // decimal time
-    const double timeDec = dateTime.hour - tzOffset + (double)dateTime.minute / MINUTES_PER_HOUR + (double)dateTime.second / SECONDS_PER_HOUR;
+    const double timeDec = (now.hour * SECONDS_PER_HOUR + now.minute * SECONDS_PER_MIN + now.second) / (double)SECONDS_PER_HOUR;
 
-    // the hour angle, see https://en.wikipedia.org/wiki/Hour_angle
-    const double hourAngle = 15 * (timeDec - (15 - longitude) / 15 - 12 + equationOfTime);
+    // the hour angle, 15° per hour, see https://en.wikipedia.org/wiki/Hour_angle
+    const double hourAngle = 15 * (timeDec - tzOffset - (15L - longitude) / 15L - 12 + equationOfTime);
 
-    const double sinAlt = sin(DEG_TO_RAD * latitude) * sin(DEG_TO_RAD * declination)
-        + cos(DEG_TO_RAD * latitude) * cos(DEG_TO_RAD * declination) * cos(DEG_TO_RAD * hourAngle);
-    const double cosAzi = -(sin(DEG_TO_RAD * latitude) * sinAlt - sin(latitude * declination))
-        / (cos(DEG_TO_RAD * latitude) * sin(acos(sinAlt)));
+    const double sinAlt = sin(latitudeInRad) * sin(declinationInRad) + cos(latitudeInRad) * cos(declinationInRad) * cos(radians(hourAngle));
+    const double cosAzi = -(sin(latitudeInRad) * sinAlt - sin(declinationInRad)) / (cos(latitudeInRad) * sin(acos(sinAlt)));
 
-    altitude = asin(sinAlt) / DEG_TO_RAD;
-    azimuth = acos(cosAzi) / DEG_TO_RAD;
-    if (timeDec > 12 + (15 - longitude) / 15 - equationOfTime)
+    altitude = degrees(asin(sinAlt));
+    azimuth = degrees(acos(cosAzi));
+    if (timeDec > 12 + (15L - longitude) / 15L - equationOfTime)
     {
         azimuth = 360 - azimuth;
     }
@@ -58,15 +69,14 @@ boolean SunTracker::CalcTimeForAltitude(DateTime& dateTime, double angle, boolea
 {
     const uint16_t dayOfYear = Calendar::DayOfYear(dateTime);
     const double equation = EQ_OF_TIME(dayOfYear);
-    const double declination = DECLINATION(dayOfYear);
+    const double declinationInRad = DECLINATION(dayOfYear);
 
     // this is a bit prone to loss of precision, result will be off some seconds
-    const double temp = (sin(angle * DEG_TO_RAD) - sin(latitude * DEG_TO_RAD) * sin(declination * DEG_TO_RAD))
-        / (cos(latitude * DEG_TO_RAD)*cos(declination * DEG_TO_RAD));
-    
+    const double temp = (sin(radians(angle)) - sin(latitudeInRad) * sin(declinationInRad)) / (cos(latitudeInRad) * cos(declinationInRad));
+
     // the provided altitude is never reached (arccos undefined)
     if (fabs(temp) > 1) return false;
-    
+
     const double localTimeDiff = 12 * acos(temp) / PI;
 
     const double diff = -longitude / 15 + tzOffset;
@@ -87,7 +97,7 @@ boolean SunTracker::CalcTimeForAltitude(DateTime& dateTime, double angle, boolea
  * Calculates the time of sunrise of the provided date.
  * Sunrise time is stored within provided DateTime struct.
  */
-boolean SunTracker::CalcSunrise(DateTime& dateTime, double angle) const
+boolean SunTracker::calcSunrise(DateTime& dateTime, double angle) const
 {
     return CalcTimeForAltitude(dateTime, angle, true);
 }
@@ -96,7 +106,7 @@ boolean SunTracker::CalcSunrise(DateTime& dateTime, double angle) const
  * Calculates the time of sunset of the provided date.
  * Sunset time is stored within provided DateTime struct.
  */
-boolean SunTracker::CalcSunset(DateTime& dateTime, double angle) const
+boolean SunTracker::calcSunset(DateTime& dateTime, double angle) const
 {
     return CalcTimeForAltitude(dateTime, angle, false);
 }
