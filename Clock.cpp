@@ -38,7 +38,7 @@ Clock::Clock(RTC *rtc) : rtc(rtc)
 
     if (!IsValidTime(rtcnow))
     {
-        this->ResetTime(&rtcnow);
+        Clock::ResetTime(rtcnow);
         rtc->WriteTime(rtcnow);
     }
 
@@ -63,16 +63,29 @@ void Clock::Update()
     }
 }
 
-DateTime Clock::Time()
+DateTime Clock::Now() const
 {
     return now;
 }
 
-void Clock::Set(DateTime dt)
+void Clock::SetTime(const DateTime& dt)
 {
-    if (this->IsValidTime(dt))
+    if (Clock::IsValidTime(dt))
     {
-        this->now = dt;
+        now.hour = dt.hour;
+        now.minute = dt.minute;
+        now.second = dt.second;
+        rtc->WriteTime(dt);
+    }
+}
+
+void Clock::SetDate(const DateTime& dt)
+{
+    if (Clock::IsValidDate(dt))
+    {
+        now.day = dt.day;
+        now.month = dt.month;
+        now.year = dt.year;
         rtc->WriteTime(dt);
     }
 }
@@ -93,16 +106,24 @@ void SerialOutputTime(datetime dt)
 }
 */
 
-boolean Clock::IsValidTime(DateTime dt)
+boolean Clock::IsValidTime(const DateTime& dt)
 {
     return dt.second - (dt.second % 60) == 0
         && dt.minute - (dt.minute % 60) == 0
         && dt.hour - (dt.hour % 24) == 0;
 }
 
-void Clock::ResetTime(DateTime *dt)
+boolean Clock::IsValidDate(const DateTime& dt)
 {
-    dt->second = 0;
-    dt->minute = 0;
-    dt->hour = 0;
+    // only a rough check
+    return dt.day - (dt.day % 31) == 0
+        && dt.month - (dt.month % 12) == 0
+        && dt.year >= 2000;
+}
+
+void Clock::ResetTime(DateTime& dt)
+{
+    dt.second = 0;
+    dt.minute = 0;
+    dt.hour = 0;
 }

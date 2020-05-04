@@ -15,17 +15,21 @@
 #include "Pump.h"          // pump settings
 #include "SunTracker.h"    // sun tracking calculations
 
-#define FORMAT_TASK_DECL(X)    char * FormatTask##X();
-#define FORMAT_TASK(X)         FormatTask##X
 
-#define EDIT_TASK_DECL(X)      boolean EditTask##X();
+//#define FORMAT_DOUBLE(X)       (FormatDouble##X)
+//#define FORMAT_DOUBLE_DECL(X)  char* FORMAT_DOUBLE(X)();
+
+#define FORMAT_TASK(X)         FormatTask##X
+#define FORMAT_TASK_DECL(X)    char* FORMAT_TASK(X)();
+
 #define EDIT_TASK(X)           EditTask##X
+#define EDIT_TASK_DECL(X)      boolean EDIT_TASK(X)();
 
 char* FormatPump();
 boolean ActivatePump();
 boolean StartPumping();
 
-char * FormatTask(int index);
+char* FormatTask(int index);
 
 FORMAT_TASK_DECL(1)
 FORMAT_TASK_DECL(2)
@@ -40,15 +44,20 @@ EDIT_TASK_DECL(4)
 EDIT_TASK_DECL(5)
 
 char* FormatClockTime();
-boolean EditClockTime();
+void EditClockTime();
 boolean SetClockTime();
+
+char* FormatClockDate();
+void EditClockDate();
+boolean SetClockDate();
 
 /*****************************************************************************************/
 
 MenuItem PROGMEM clockMenuItems[] =
 {
     { "..", return_menu, NULL, NULL },
-    { "Stellen", edit_value, EditClockTime, FormatClockTime },
+    { "Zeit", edit_value, EditClockTime, FormatClockTime },
+    { "Datum", edit_value, EditClockDate, FormatClockDate },
 };
 
 MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
@@ -57,7 +66,7 @@ MenuList clockMenu(clockMenuItems, menuListSize(clockMenuItems));
 
 MenuItem PROGMEM pumpMenuItems[] =
 {
-    { "..", return_menu, NULL },
+    { "..", return_menu, NULL, NULL },
     { "Manuell", edit_value, ActivatePump, FormatPump },
     { "Aktion 1", edit_value, EDIT_TASK(1), FORMAT_TASK(1) },
     { "Aktion 2", edit_value, EDIT_TASK(2), FORMAT_TASK(2) },
@@ -70,10 +79,23 @@ MenuList pumpMenu(pumpMenuItems, menuListSize(pumpMenuItems));
 
 /*****************************************************************************************/
 
+MenuItem PROGMEM locationMenuItems[] =
+{
+    { "..", return_menu, NULL, NULL },
+    //{ "Breite", edit_value, NULL, FormatLat },
+    //{ "L\xE1nge", edit_value, NULL, FormatLong },
+    //{ "Zeitzone (h)", edit_value, NULL, FormatTimeZone },
+};
+
+MenuList locationMenu(locationMenuItems, menuListSize(clockMenuItems));
+
+/*****************************************************************************************/
+
 MenuItem PROGMEM menuItems[] =
 {
     { "Uhr", enter_submenu,  &clockMenu, NULL },
     { "Pumpe", enter_submenu,  &pumpMenu, NULL },
+    { "Ort", enter_submenu,  &locationMenu, NULL },
 };
 
 MenuList menuList(menuItems, menuListSize(menuItems));
@@ -191,7 +213,7 @@ boolean EditHourComplete()
 
     mainMenu->startEdit(&minuteEdit);
 
-    // edit minute, so do not return to menu yet
+    // edit minute next, so do not return to menu yet
     return false;
 }
 
@@ -211,6 +233,14 @@ void EditTime(byte hour, byte minute, ItemFunction callback)
     };
 
     mainMenu->startEdit(&hourEdit);
+}
+
+/*****************************************************************************************/
+char * FormatDouble(int decPlaces, double value)
+{
+    static char valBuf[10];
+    dtostrf(value, 8, decPlaces, valBuf);
+    return valBuf;
 }
 
 /*****************************************************************************************/
@@ -325,16 +355,17 @@ EDIT_TASK_DEF(3)
 EDIT_TASK_DEF(4)
 EDIT_TASK_DEF(5)
 
+/*****************************************************************************************/
+
 char * FormatClockTime()
 {
-    char outBuf[NUM_LCD_COLS + 1], valBuf[5];
-    DateTime now = clock->Time();
+    DateTime now = clock->Now();
     return FormatTime(now.hour, now.minute);
 }
 
-boolean EditClockTime()
+void EditClockTime()
 {
-    DateTime now = clock->Time();
+    DateTime now = clock->Now();
     EditTime(now.hour, now.minute, SetClockTime);
 }
 
@@ -346,7 +377,111 @@ boolean SetClockTime()
     newtime.minute = editMinute;
     newtime.second = 0;
 
-    clock->Set(newtime);
+    clock->SetTime(newtime);
+
+    // return to menu
+    return true;
+}
+
+/*****************************************************************************************/
+
+long editDay, editMonth, editYear;
+//ItemFunction editDateCallback = NULL;
+
+boolean EditMonthComplete()
+{
+    const byte maxDays = Calendar::GetDaysInMonth(editYear, editMonth);
+
+    static EditType dayEdit =
+    {
+        "Tag",
+        &editDay,
+        "",
+        1, maxDays, 1,
+        SetClockDate
+    };
+
+    mainMenu->startEdit(&dayEdit);
+
+    // set date when finished, so do not return to menu yet
+    return false;
+}
+
+boolean EditYearComplete()
+{
+    static EditType monthEdit =
+    {
+        "Monat",
+        &editMonth,
+        "",
+        1, 12, 1,
+        EditMonthComplete
+    };
+
+    mainMenu->startEdit(&monthEdit);
+
+    // edit month next, so do not return to menu yet
+    return false;
+}
+
+void EditDate(byte day, byte month, word year)
+{
+    editDay = day;
+    editMonth = month;
+    editYear = year;
+
+    static EditType yearEdit =
+    {
+        "Jahr",
+        &editYear,
+        "",
+        2000, 2500, 1,
+        EditYearComplete
+    };
+
+    mainMenu->startEdit(&yearEdit);
+}
+
+char* FormatDate(byte day, byte month, word year)
+{
+    static char outBuf[NUM_LCD_COLS + 1];
+    char valBuf[5];
+    int off = 0;
+
+    itoa(day, outBuf, 10);
+    strcat(outBuf, ".");
+
+    itoa(month, valBuf, 10);
+    strcat(outBuf, valBuf);
+    strcat(outBuf, ".");
+
+    itoa(year, valBuf, 10);
+    strcat(outBuf, valBuf);
+
+    return outBuf;
+}
+
+char* FormatClockDate()
+{
+    DateTime now = clock->Now();
+    return FormatDate(now.day, now.month, now.year);
+}
+
+void EditClockDate()
+{
+    DateTime now = clock->Now();
+    EditDate(now.year, now.month, now.day);
+}
+
+boolean SetClockDate()
+{
+    DateTime newDate;
+
+    newDate.day = editDay;
+    newDate.month = editMonth;
+    newDate.year = editYear;
+
+    clock->SetDate(newDate);
 
     // return to menu
     return true;

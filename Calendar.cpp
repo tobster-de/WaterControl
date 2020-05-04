@@ -107,3 +107,8 @@ void Calendar::ConvertDateTime(timestamp_t timeStamp, DateTime &dateTime)
     dateTime.month = month;
     dateTime.day = value + 1;     // first day of month is 1
 }
+
+byte Calendar::GetDaysInMonth(word year, byte month)
+{
+    return DAYS_IN_MONTH(year, month);
+}

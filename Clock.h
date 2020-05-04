@@ -15,16 +15,18 @@ private:
 
     void updateTime();
 
-    boolean IsValidTime(DateTime dt);
-    void ResetTime(DateTime *dt);
+    static boolean IsValidTime(const DateTime& dt);
+    static boolean IsValidDate(const DateTime& dt);
+    static void ResetTime(DateTime& dt);
 
 public:
     Clock(RTC *rtc);
 
     void Update();
-    DateTime Time();
+    DateTime Now() const;
 
-    void Set(DateTime dt);
+    void SetTime(const DateTime& dt);
+    void SetDate(const DateTime& dt);
 };
 
 extern Clock *clock;

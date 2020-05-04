@@ -22,6 +22,8 @@ public:
     static uint16_t DayOfYear(DateTime &dateTime);
     static timestamp_t ConvertTimeStamp(DateTime &dateTime);
     static void ConvertDateTime(timestamp_t timeStamp, DateTime &dateTime);
+
+    static byte GetDaysInMonth(word year, byte month);
 };
 
 #endif

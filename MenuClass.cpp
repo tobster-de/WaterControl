@@ -216,7 +216,7 @@ void MenuClass::update()
         {
             //EditType* editData = getEditData();
             *currentEdit->value += changeValue;
-
+            
             if (*currentEdit->value > currentEdit->maxValue)
             {
                 *currentEdit->value = currentEdit->minValue + (*currentEdit->value - currentEdit->maxValue);
@@ -226,7 +226,7 @@ void MenuClass::update()
             {
                 *currentEdit->value = currentEdit->maxValue - (currentEdit->minValue - *currentEdit->value) + 1;
             }
-
+            
             displayEdit(currentEdit);
         }
 
@@ -300,6 +300,17 @@ void MenuClass::startEdit(EditType *anEdit)
     if (this->currentEdit != NULL)
     {
         this->changeMode(mode_edit);
+
+        if (*currentEdit->value > currentEdit->maxValue)
+        {
+            *currentEdit->value = currentEdit->maxValue;
+        }
+
+        if (*currentEdit->value < currentEdit->minValue)
+        {
+            *currentEdit->value = currentEdit->minValue;
+        }
+        
         this->displayEdit(this->currentEdit);
     }
 }

@@ -47,7 +47,7 @@ PumpTask Pump::FindNextPumpTask()
 {
     int v1, v2, ix;
     long minv = 1440;
-    DateTime time = clock->Time();
+    DateTime time = clock->Now();
 
     v2 = time.hour * 60 + time.minute;
     for (int i = 0; i < 10; i++)

@@ -30,7 +30,7 @@ SunTracker *sunTracker;                           // already usable instance var
 
 void SunTracker::update()
 {
-    DateTime now = clock->Time();
+    DateTime now = clock->Now();
     dayOfYear = Calendar::DayOfYear(now);
 
     if (dayOfYear != lastDayOfYear)              // these only depend on the date not the time, so spare recalculation

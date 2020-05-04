@@ -105,7 +105,7 @@ void Menu::displayStatus()
     LCD->setCursor(0, 0);
     LCD->print("Status");
 
-    now = this->clock->Time();
+    now = this->clock->Now();
     LCD->setCursor(NUM_LCD_COLS - 5, 0);
     if (now.hour < 10)
     {
@@ -127,7 +127,7 @@ void Menu::displayStatus()
     LCD->setCursor(0, 3);
     len = LCD->print(d, 2);
     LCD->setCursor(len, 3);
-    LCD->print("\xDF");
+    LCD->print("\xDF ");
 
     d = sunTracker->getAltitude();
     LCD->setCursor(8, 2);
@@ -135,7 +135,7 @@ void Menu::displayStatus()
     LCD->setCursor(8, 3);
     len = LCD->print(d, 2);
     LCD->setCursor(8 + len, 3);
-    LCD->print("\xDF");
+    LCD->print("\xDF ");
 }
 
 void Menu::changeMode(MenuMode nextMode)
