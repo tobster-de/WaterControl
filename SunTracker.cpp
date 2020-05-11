@@ -18,7 +18,7 @@ SunTracker *sunTracker;                           // already usable instance var
 #define degrees(rad)      ((rad)*RAD_TO_DEG)
 #endif
 
-#define AXIAL_TILT        23.43665L               // axial tilt, see https://en.wikipedia.org/wiki/Axial_tilt
+#define AXIAL_TILT        23.43665               // axial tilt, see https://en.wikipedia.org/wiki/Axial_tilt
 
  // declination of the sun, within the tropical circles
 #define DECLINATION(DOY) \

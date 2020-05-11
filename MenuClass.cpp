@@ -301,16 +301,8 @@ void MenuClass::startEdit(EditType *anEdit)
     {
         this->changeMode(mode_edit);
 
-        if (*currentEdit->value > currentEdit->maxValue)
-        {
-            *currentEdit->value = currentEdit->maxValue;
-        }
+        *currentEdit->value = constrain(*currentEdit->value, currentEdit->minValue, currentEdit->maxValue);
 
-        if (*currentEdit->value < currentEdit->minValue)
-        {
-            *currentEdit->value = currentEdit->minValue;
-        }
-        
         this->displayEdit(this->currentEdit);
     }
 }

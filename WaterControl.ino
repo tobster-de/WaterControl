@@ -1,3 +1,4 @@
+#include "Stepper.h"
 #include "SunTracker.h"
 #include "Calendar.h"
 #include <TimerOne.h>
@@ -14,7 +15,7 @@
 #include "RTC.h"           // real time clock DS1307
 #include "Pump.h"          // pump settings
 #include "SunTracker.h"    // sun tracking calculations
-
+#include "Stepper.h"       // stepper motor interfacing
 
 //#define FORMAT_DOUBLE(X)       (FormatDouble##X)
 //#define FORMAT_DOUBLE_DECL(X)  char* FORMAT_DOUBLE(X)();
@@ -87,7 +88,7 @@ MenuItem PROGMEM locationMenuItems[] =
     //{ "Zeitzone (h)", edit_value, NULL, FormatTimeZone },
 };
 
-MenuList locationMenu(locationMenuItems, menuListSize(clockMenuItems));
+MenuList locationMenu(locationMenuItems, menuListSize(locationMenuItems));
 
 /*****************************************************************************************/
 
@@ -127,21 +128,18 @@ void setup()
     pinMode(RTC_SQW_PIN, INPUT);
     digitalWrite(RTC_SQW_PIN, HIGH);
 
+    LCD_Init(DISPLAY_I2C_ADDR);
+    LCD->clear();
+    LCD->setBacklight(255);
+    
     // init RTC, clock and pump
-    rtc = new RTC(RTC_I2C_ADDR);
+    rtc = new RTC();
+    rtc->SetSqwPinMode(SquareWave1HZ);
     clock = new Clock(rtc);
     pump = new Pump(PUMP_PIN, clock);
     sunTracker = new SunTracker(clock, 51.3627, 9.4674, 2);
 
     encoder = new ClickEncoder((uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B, (uint8_t)ENCODER_BUTTON, ENCODER_STEPS);
-
-    Timer1.initialize(1000);
-    Timer1.attachInterrupt(timerIsr);
-
-    LCD_Init(DISPLAY_I2C_ADDR);
-    LCD->clear();
-    LCD->setBacklight(255);
-
     mainMenu = new Menu(LCD, encoder, &menuList, clock, sunTracker);
 
     // blink LED three times as 'hello'
@@ -152,6 +150,9 @@ void setup()
         digitalWrite(STATUS_LED_PIN, LOW);
         delay(100);
     }
+
+    Timer1.initialize(1000);
+    Timer1.attachInterrupt(timerIsr);
 
     attachInterrupt(0, rtcTimerIsr, RISING);
 }
@@ -182,7 +183,6 @@ char * FormatTime(byte hour, byte minute)
 {
     static char outBuf[NUM_LCD_COLS + 1];
     char valBuf[5];
-    int off = 0;
 
     itoa(hour, outBuf, 10);
     strcat(outBuf, ":");
@@ -371,7 +371,7 @@ void EditClockTime()
 
 boolean SetClockTime()
 {
-    DateTime newtime;
+    DateTime newtime = clock->Now();
 
     newtime.hour = editHour;
     newtime.minute = editMinute;
@@ -430,12 +430,13 @@ void EditDate(byte day, byte month, word year)
     editMonth = month;
     editYear = year;
 
+    // RTC operates in years 0-99, offset by 2000 results in this
     static EditType yearEdit =
     {
         "Jahr",
         &editYear,
         "",
-        2000, 2500, 1,
+        2000, 2099, 1,
         EditYearComplete
     };
 
@@ -470,12 +471,12 @@ char* FormatClockDate()
 void EditClockDate()
 {
     DateTime now = clock->Now();
-    EditDate(now.year, now.month, now.day);
+    EditDate(now.day, now.month, now.year);
 }
 
 boolean SetClockDate()
 {
-    DateTime newDate;
+    DateTime newDate = clock->Now();
 
     newDate.day = editDay;
     newDate.month = editMonth;

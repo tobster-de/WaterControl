@@ -32,34 +32,33 @@ void Clock::updateTime()
     }
 }
 
-Clock::Clock(RTC *rtc) : rtc(rtc)
+void Clock::syncWithRTC()
 {
     DateTime rtcnow = rtc->ReadTime();
 
-    if (!IsValidTime(rtcnow))
+    if (IsValidTime(rtcnow) && IsValidDate(rtcnow))
     {
-        Clock::ResetTime(rtcnow);
-        rtc->WriteTime(rtcnow);
+        this->now = rtcnow;
+        synced = true;
     }
+}
 
-    this->now = rtcnow;
+Clock::Clock(RTC *rtc) : rtc(rtc)
+{
+    syncWithRTC();
 }
 
 void Clock::Update()
 {
-    if (this->now.minute == 0 && this->now.second == 0)
+    if (this->now.minute % 10 == 0 && this->now.second == 0 && synced == false)
     {
-        // sync once in an hour with the RTC
-        DateTime rtcnow = rtc->ReadTime();
-
-        if (IsValidTime(rtcnow))
-        {
-            this->now = rtcnow;
-        }
+        // sync every 10 minutes with the RTC
+        syncWithRTC();
     }
     else
     {
         updateTime();
+        synced = false;
     }
 }
 
@@ -116,9 +115,9 @@ boolean Clock::IsValidTime(const DateTime& dt)
 boolean Clock::IsValidDate(const DateTime& dt)
 {
     // only a rough check
-    return dt.day - (dt.day % 31) == 0
-        && dt.month - (dt.month % 12) == 0
-        && dt.year >= 2000;
+    return dt.day > 0 && dt.day <= 31
+        && dt.month > 0 && dt.month <= 12
+        && dt.year >= 2000 && dt.year < 2100;
 }
 
 void Clock::ResetTime(DateTime& dt)
@@ -126,4 +125,11 @@ void Clock::ResetTime(DateTime& dt)
     dt.second = 0;
     dt.minute = 0;
     dt.hour = 0;
+}
+
+void Clock::ResetDate(DateTime& dt)
+{
+    dt.day = 1;
+    dt.month = 1;
+    dt.year = 2000;
 }

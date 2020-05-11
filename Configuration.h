@@ -12,7 +12,6 @@
 #define RTC_SQW_PIN         2       // pin 2 (interrupt)
 #define PUMP_PIN            12      // relais or mosfet driven pump
 
-#define RTC_I2C_ADDR        0x68
 #define DISPLAY_I2C_ADDR    0x3F
 
 #define ENCODER_PIN_A       9       // digital pin 9

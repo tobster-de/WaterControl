@@ -25,7 +25,16 @@ typedef struct _datetime DateTime;
 
 #define PI 3.1415926535897932384626433832795
 #define TWO_PI 6.283185307179586476925286766559
-#define DEG_TO_RAD 0.017453292519943295769236907684886
+
+#ifndef radians
+#define DEG_TO_RAD        0.017453292519943295769236907684886
+#define radians(deg)      ((deg)*DEG_TO_RAD)
+#endif
+
+#ifndef degrees
+#define RAD_TO_DEG        57.295779513082320876798154814105
+#define degrees(rad)      ((rad)*RAD_TO_DEG)
+#endif
 
 #define AXIAL_TILT        23.43665F               // axial tilt, see https://en.wikipedia.org/wiki/Axial_tilt
 
@@ -126,20 +135,65 @@ void calcSunset(DateTime& dateTime, double angle)
     calcTimeForAltitude(dateTime, angle, false);
 }
 
+void update(DateTime& now)
+{
+    double declination, equationOfTime;
+    int doy = dayOfYear(now);
+
+    //if (dayOfYear != lastDayOfYear)              // these only depend on the date not the time, so spare recalculation
+    {
+        // https://lexikon.astronomie.info/zeitgleichung/
+
+        declination = DECLINATION(doy);
+        equationOfTime = EQ_OF_TIME(doy);
+
+        //lastDayOfYear = dayOfYear;
+    }
+
+    // decimal time
+    const double timeDec = ((now.hour - tzOffset) * SECONDS_PER_HOUR + now.minute * SECONDS_PER_MIN + now.second) / (double)SECONDS_PER_HOUR;
+
+    std::cout << "t: " << timeDec << "\n";
+    
+    // the hour angle, 15° per hour, see https://en.wikipedia.org/wiki/Hour_angle
+    const double hourAngle = 15 * (timeDec - (15. - longitude) / 15. - 12 + equationOfTime);
+
+    std::cout << "ha: " << hourAngle << "\n";
+    
+    const double sinAlt = sin(radians(latitude)) * sin(radians(declination))
+        + cos(radians(latitude)) * cos(radians(declination)) * cos(radians(hourAngle));
+    const double cosAzi = -(sin(radians(latitude)) * sinAlt - sin(radians(declination)))
+        / (cos(radians(latitude)) * sin(acos(sinAlt)));
+
+    double altitude = degrees(asin(sinAlt));
+    double azimuth = degrees(acos(cosAzi));
+    if (timeDec > 12 + (15. - longitude) / 15. - equationOfTime)
+    {
+        azimuth = 360 - azimuth;
+    }
+    
+    std::cout << "Azi: " << azimuth << "\n";
+    std::cout << "Alt: " << altitude << "\n\n";
+}
+
 int main()
 {
-    DateTime dt = { 0, 0, 0, 0, 2, 5, 2020 };
+    DateTime dt = { 20, 00, 00, 0, 3, 5, 2020 };
     std::cout << dayOfYear(dt) << "\n" ;
     
-    calcSunrise(dt, 60);
+    update(dt);
     
-    std::cout << std::setfill('0') << std::setw(2) << (uint32_t)dt.hour << ":" 
+    calcSunrise(dt, -50./60);
+    
+    std::cout << "\n"
+        << std::setfill('0') << std::setw(2) << (uint32_t)dt.hour << ":" 
         << std::setfill('0') << std::setw(2) <<  (uint32_t)dt.minute << ":" 
-        << std::setfill('0') << std::setw(2) <<  (uint32_t)dt.second << "\n";
+        << std::setfill('0') << std::setw(2) <<  (uint32_t)dt.second << "\n\n";
 
-    calcSunset(dt, 0);
+    calcSunset(dt, -50./60);
     
-    std::cout << std::setfill('0') << std::setw(2) << (uint32_t)dt.hour << ":" 
+    std::cout << "\n"
+        << std::setfill('0') << std::setw(2) << (uint32_t)dt.hour << ":" 
         << std::setfill('0') << std::setw(2) <<  (uint32_t)dt.minute << ":" 
         << std::setfill('0') << std::setw(2) <<  (uint32_t)dt.second << "\n";
 }
