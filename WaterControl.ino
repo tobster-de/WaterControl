@@ -46,11 +46,9 @@ EDIT_TASK_DECL(5)
 
 char* FormatClockTime();
 void EditClockTime();
-boolean SetClockTime();
 
 char* FormatClockDate();
 void EditClockDate();
-boolean SetClockDate();
 
 /*****************************************************************************************/
 
@@ -80,12 +78,18 @@ MenuList pumpMenu(pumpMenuItems, menuListSize(pumpMenuItems));
 
 /*****************************************************************************************/
 
+void EditLatitude();
+void EditLongitude();
+
+char* FormatLatitude();
+char* FormatLongitude();
+
 MenuItem PROGMEM locationMenuItems[] =
 {
     { "..", return_menu, NULL, NULL },
-    //{ "Breite", edit_value, NULL, FormatLat },
-    //{ "L\xE1nge", edit_value, NULL, FormatLong },
-    //{ "Zeitzone (h)", edit_value, NULL, FormatTimeZone },
+    { "Breite", edit_value, EditLatitude, FormatLatitude },
+    { "L\xE1nge", edit_value, EditLongitude, FormatLongitude },
+    //{ "Zeitabw. (h)", edit_value, NULL, FormatTimeZone },         // offset to GMT regarding timezone and daylight savings time (hours)
 };
 
 MenuList locationMenu(locationMenuItems, menuListSize(locationMenuItems));
@@ -131,13 +135,16 @@ void setup()
     LCD_Init(DISPLAY_I2C_ADDR);
     LCD->clear();
     LCD->setBacklight(255);
-    
+
     // init RTC, clock and pump
     rtc = new RTC();
     rtc->SetSqwPinMode(SquareWave1HZ);
     clock = new Clock(rtc);
     pump = new Pump(PUMP_PIN, clock);
-    sunTracker = new SunTracker(clock, 51.3627, 9.4674, 2);
+
+    Coordinates c = { { 51, 21, 44 }, { 9, 27, 51 }, 2 };
+    //rtc->ReadNVM(0, &c, sizeof(c));
+    sunTracker = new SunTracker(clock, c);
 
     encoder = new ClickEncoder((uint8_t)ENCODER_PIN_A, (uint8_t)ENCODER_PIN_B, (uint8_t)ENCODER_BUTTON, ENCODER_STEPS);
     mainMenu = new Menu(LCD, encoder, &menuList, clock, sunTracker);
@@ -208,9 +215,11 @@ boolean EditHourComplete()
         &editMinute,
         "",
         0, 59, 1,
-        editTimeCallback
+        NULL
     };
 
+    // dynamically add callback, because static variable is only initialized once
+    minuteEdit.endEdit = editTimeCallback;
     mainMenu->startEdit(&minuteEdit);
 
     // edit minute next, so do not return to menu yet
@@ -236,6 +245,7 @@ void EditTime(byte hour, byte minute, ItemFunction callback)
 }
 
 /*****************************************************************************************/
+
 char * FormatDouble(int decPlaces, double value)
 {
     static char valBuf[10];
@@ -273,9 +283,10 @@ void EditDuration(long duration, ItemFunction callback)
         &editDuration,
         "s",
         1, 600, 1,
-        callback
+        NULL
     };
-
+    
+    durationEdit.endEdit = callback;
     mainMenu->startEdit(&durationEdit);
 }
 
@@ -345,7 +356,7 @@ boolean EditTaskTimeComplete##X() { \
 } \
 boolean EditTask##X() { \
 	PumpTask pt = pump->GetPumpTask(X); \
-	EditTime(pt.time.hour, pt.time.minute, EditTaskTimeComplete##X); \
+	EditTime(pt.time.hour, pt.time.minute, &EditTaskTimeComplete##X); \
 	return false; \
 }
 
@@ -363,12 +374,6 @@ char * FormatClockTime()
     return FormatTime(now.hour, now.minute);
 }
 
-void EditClockTime()
-{
-    DateTime now = clock->Now();
-    EditTime(now.hour, now.minute, SetClockTime);
-}
-
 boolean SetClockTime()
 {
     DateTime newtime = clock->Now();
@@ -383,10 +388,30 @@ boolean SetClockTime()
     return true;
 }
 
+void EditClockTime()
+{
+    DateTime now = clock->Now();
+    EditTime(now.hour, now.minute, &SetClockTime);
+}
+
+
 /*****************************************************************************************/
 
 long editDay, editMonth, editYear;
-//ItemFunction editDateCallback = NULL;
+
+boolean SetClockDate()
+{
+    DateTime newDate = clock->Now();
+
+    newDate.day = editDay;
+    newDate.month = editMonth;
+    newDate.year = editYear;
+
+    clock->SetDate(newDate);
+
+    // return to menu
+    return true;
+}
 
 boolean EditMonthComplete()
 {
@@ -474,16 +499,126 @@ void EditClockDate()
     EditDate(now.day, now.month, now.year);
 }
 
-boolean SetClockDate()
+/*****************************************************************************************/
+
+long editCoDeg, editCoMin, editCoSec;
+byte whichCoord = 0;
+
+boolean SetCoordinate()
 {
-    DateTime newDate = clock->Now();
+    Coordinates current = sunTracker->getCoordinates();
+    coordinate newCo = { editCoDeg, (byte)editCoMin, (byte)editCoSec };
+    if (whichCoord == 0)
+    {
+        current.latitude = newCo;
+    }
+    else
+    {
+        current.longitude = newCo;
+    }
 
-    newDate.day = editDay;
-    newDate.month = editMonth;
-    newDate.year = editYear;
-
-    clock->SetDate(newDate);
+    sunTracker->setCoordinates(current);
 
     // return to menu
     return true;
+}
+
+boolean EditCoMinutesComplete()
+{
+    const byte maxDays = Calendar::GetDaysInMonth(editYear, editMonth);
+
+    static EditType coSecondEdit =
+    {
+        "Sekunden",
+        &editCoSec,
+        "\"",
+        0, 59, 1,
+        SetCoordinate
+    };
+
+    mainMenu->startEdit(&coSecondEdit);
+
+    // set coordinates when finished, so do not return to menu yet
+    return false;
+}
+
+boolean EditCoDegreesComplete()
+{
+    static EditType coMinuteEdit =
+    {
+        "Minuten",
+        &editCoMin,
+        "'",
+        0, 59, 1,
+        EditCoMinutesComplete
+    };
+
+    mainMenu->startEdit(&coMinuteEdit);
+
+    // edit minutes next, so do not return to menu yet
+    return false;
+}
+
+void EditCoordinate(coordinate &coordinate, int16_t minMax)
+{
+    editCoDeg = coordinate.degrees;
+    editCoMin = coordinate.minute;
+    editCoSec = coordinate.second;
+
+    static EditType coDegreesEdit =
+    {
+        "Grad",
+        &editCoDeg,
+        "\xDF", //°
+        -minMax, minMax, 1,
+        EditCoDegreesComplete
+    };
+
+    mainMenu->startEdit(&coDegreesEdit);
+}
+
+char* FormatCoord(coordinate coordinate)
+{
+    static char outBuf[NUM_LCD_COLS + 1];
+    char valBuf[5];
+    int off = 0;
+
+    itoa(coordinate.degrees, outBuf, 10);
+    strcat(outBuf, "\xDF");
+
+    itoa(coordinate.minute, valBuf, 10);
+    strcat(outBuf, valBuf);
+    strcat(outBuf, "'");
+
+    itoa(coordinate.second, valBuf, 10);
+    strcat(outBuf, valBuf);
+    strcat(outBuf, "\"");
+
+    return outBuf;
+}
+
+char* FormatLatitude()
+{
+    Coordinates c = sunTracker->getCoordinates();
+    return FormatCoord(c.latitude);
+}
+
+char* FormatLongitude()
+{
+    Coordinates c = sunTracker->getCoordinates();
+    return FormatCoord(c.longitude);
+}
+
+void EditLatitude()
+{
+    Coordinates c = sunTracker->getCoordinates();
+    whichCoord = 0;
+    EditCoordinate(c.latitude, 89);
+}
+
+void EditLongitude()
+{
+    Coordinates c = sunTracker->getCoordinates();
+    whichCoord = 1;
+    EditCoordinate(c.longitude, 179);
 }

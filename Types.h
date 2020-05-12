@@ -36,9 +36,24 @@ typedef struct _hourminute HourMinute;
 struct _pumpslot
 {
     _hourminute time;
-    int duration;
+    word duration;
     boolean active;
 };
 typedef struct _pumpslot PumpTask;
+
+struct coordinate
+{
+    int16_t degrees;
+    byte minute;
+    byte second;
+};
+
+struct _coordinates
+{
+    coordinate latitude;
+    coordinate longitude;
+    float timeZone;
+};
+typedef struct _coordinates Coordinates;
 
 #endif

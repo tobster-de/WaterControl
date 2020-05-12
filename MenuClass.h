@@ -1,7 +1,7 @@
-/*
+/**
  * MenuClass.h
  *
- */
+**/
 
 #ifndef MENUCLASS_H_
 #define MENUCLASS_H_
@@ -13,9 +13,9 @@
 #include "Arduino.h"
 #include "Configuration.h"
 
- // function returns true if finished, else it gets called again during loop
-typedef boolean(*ItemFunction)();
 // function returns true if finished, else it gets called again during loop
+typedef boolean(*ItemFunction)();
+// function returns a display string of the data
 typedef char* (*FormatFunction)();
 
 typedef enum
@@ -124,7 +124,7 @@ protected:
     void getText(char*, int);
     //// get the item text
     //EditType* getEditData();
-    // get the formatting funtion for item
+    // get the formatting function for item
     FormatFunction getFormatFunction(int);
 public:
     void update();

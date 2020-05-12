@@ -16,7 +16,7 @@
 class SunTracker
 {
     Clock *clock;
-    
+
     double declinationInRad;     // declination of the sun (in radians)
     double equationOfTime;       // equation of time (in hours)
     double azimuth;
@@ -25,22 +25,19 @@ class SunTracker
     uint16_t dayOfYear;
     uint16_t lastDayOfYear = 0;
 
-    double latitude;        // location of the tracker
-    double latitudeInRad;   // location of the tracker (in radians)
-    double longitude;       // location of the tracker
-    double longitudeInRad;  // location of the tracker (in radians)
-    double tzOffset;        // offset of timezone to UTC in hours
+    Coordinates coordinates;     // location of the tracker
+    double latitudeInRad;        // location of the tracker (in radians)
+    double longitudeInDeg;
+    double longitudeInRad;       // location of the tracker (in radians)
+    double tzOffset;             // offset of timezone to UTC in hours
 
-    boolean CalcTimeForAltitude(DateTime &dateTime, double angle, boolean beforeMean) const;
+    boolean calcTimeForAltitude(DateTime &dateTime, double angle, boolean beforeMean) const;
+    static double toDecimalCoordinate(coordinate c);
 public:
-    SunTracker(Clock *aClock, double latitude, double longitude, double timezoneOffset) :
-        clock(aClock),
-        latitude(latitude),
-        latitudeInRad(radians(latitude)),
-        longitude(longitude),    
-        longitudeInRad(radians(latitude)),
-        tzOffset(timezoneOffset)
+
+    SunTracker(Clock *aClock, Coordinates coordinates) : clock(aClock)
     {
+        setCoordinates(coordinates);
         update();
     }
 
@@ -57,6 +54,20 @@ public:
     double getAzimuth() const
     {
         return azimuth;
+    }
+
+    Coordinates getCoordinates()
+    {
+        return coordinates;
+    }
+
+    void setCoordinates(const Coordinates& coordinates)
+    {
+        this->coordinates = coordinates;
+        longitudeInDeg = toDecimalCoordinate(coordinates.longitude);
+        longitudeInRad = radians(longitudeInDeg);
+        latitudeInRad = radians(toDecimalCoordinate(coordinates.latitude));
+        tzOffset = coordinates.timeZone;
     }
 };
 
